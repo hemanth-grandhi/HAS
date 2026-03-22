@@ -2,10 +2,8 @@ package com.has.backend.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.Data;
 import java.time.LocalDate;
 
-@Data
 @Entity
 @Table(name = "guests")
 public class Guest {
@@ -29,4 +27,52 @@ public class Guest {
 
     @NotBlank(message = "Room type cannot be empty")
     private String roomType;
+
+    public Long getGuestId() {
+        return guestId;
+    }
+
+    public void setGuestId(Long guestId) {
+        this.guestId = guestId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+
+    public LocalDate getArrivalDate() {
+        return arrivalDate;
+    }
+
+    public void setArrivalDate(LocalDate arrivalDate) {
+        this.arrivalDate = arrivalDate;
+    }
+
+    public Integer getExpectedDuration() {
+        return expectedDuration;
+    }
+
+    public void setExpectedDuration(Integer expectedDuration) {
+        this.expectedDuration = expectedDuration;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public void setRoomType(String roomType) {
+        this.roomType = roomType;
+    }
 }

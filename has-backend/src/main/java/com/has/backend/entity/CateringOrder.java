@@ -1,10 +1,8 @@
 package com.has.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "catering_orders")
 public class CateringOrder {
@@ -20,4 +18,52 @@ public class CateringOrder {
     private Integer quantity;
     private Double charges;
     private LocalDateTime dateTime;
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+    public CheckIn getCheckIn() {
+        return checkIn;
+    }
+
+    public void setCheckIn(CheckIn checkIn) {
+        this.checkIn = checkIn;
+    }
+
+    public String getFoodItemName() {
+        return foodItemName;
+    }
+
+    public void setFoodItemName(String foodItemName) {
+        this.foodItemName = foodItemName;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Double getCharges() {
+        return charges;
+    }
+
+    public void setCharges(Double charges) {
+        this.charges = charges;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
 }

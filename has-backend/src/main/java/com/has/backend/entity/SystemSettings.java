@@ -1,9 +1,7 @@
 package com.has.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "system_settings")
 public class SystemSettings {
@@ -14,4 +12,36 @@ public class SystemSettings {
     private String discountTier;
     private Integer rewardPointThreshold;
     private Double occupancyThreshold;
+
+    public Long getSettingId() {
+        return settingId;
+    }
+
+    public void setSettingId(Long settingId) {
+        this.settingId = settingId;
+    }
+
+    public String getDiscountTier() {
+        return discountTier;
+    }
+
+    public void setDiscountTier(String discountTier) {
+        this.discountTier = discountTier;
+    }
+
+    public Integer getRewardPointThreshold() {
+        return rewardPointThreshold;
+    }
+
+    public void setRewardPointThreshold(Integer rewardPointThreshold) {
+        this.rewardPointThreshold = rewardPointThreshold;
+    }
+
+    public Double getOccupancyThreshold() {
+        return occupancyThreshold;
+    }
+
+    public void setOccupancyThreshold(Double occupancyThreshold) {
+        this.occupancyThreshold = occupancyThreshold;
+    }
 }

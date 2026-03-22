@@ -1,9 +1,7 @@
 package com.has.backend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "occupancy_records")
 public class OccupancyRecord {
@@ -18,4 +16,44 @@ public class OccupancyRecord {
     private Double occupancyRate;
     private String month;
     private Double revisedTariff;
+
+    public Long getRecordId() {
+        return recordId;
+    }
+
+    public void setRecordId(Long recordId) {
+        this.recordId = recordId;
+    }
+
+    public Room getRoom() {
+        return room;
+    }
+
+    public void setRoom(Room room) {
+        this.room = room;
+    }
+
+    public Double getOccupancyRate() {
+        return occupancyRate;
+    }
+
+    public void setOccupancyRate(Double occupancyRate) {
+        this.occupancyRate = occupancyRate;
+    }
+
+    public String getMonth() {
+        return month;
+    }
+
+    public void setMonth(String month) {
+        this.month = month;
+    }
+
+    public Double getRevisedTariff() {
+        return revisedTariff;
+    }
+
+    public void setRevisedTariff(Double revisedTariff) {
+        this.revisedTariff = revisedTariff;
+    }
 }
