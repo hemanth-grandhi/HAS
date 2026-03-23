@@ -22,11 +22,11 @@ public class ReservationService {
         this.guestRepo = guestRepo;
     }
 
-    public String makeReservation(Guest guest, LocalDateTime date) {
+    public String makeReservation(Guest guest, String roomType, LocalDateTime date) {
         Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
-                .filter(r -> guest.getRoomType().equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
+                .filter(r -> roomType.equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + guest.getRoomType()));
+                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + roomType));
 
         room.setAvailabilityStatus("RESERVED");
         roomRepo.save(room);
@@ -37,6 +37,7 @@ public class ReservationService {
         Reservation res = new Reservation();
         res.setGuest(guest);
         res.setRoom(room);
+        res.setRoomType(roomType);
         res.setReservationDate(date);
         res.setTokenNumber(token);
         reservationRepo.save(res);
