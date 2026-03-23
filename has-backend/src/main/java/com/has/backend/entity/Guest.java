@@ -25,9 +25,6 @@ public class Guest {
     @Min(value = 1, message = "Expected duration must be at least 1 day")
     private Integer expectedDuration;
 
-    @NotBlank(message = "Room type cannot be empty")
-    private String roomType;
-
     public Long getGuestId() {
         return guestId;
     }
@@ -68,11 +65,4 @@ public class Guest {
         this.expectedDuration = expectedDuration;
     }
 
-    public String getRoomType() {
-        return roomType;
-    }
-
-    public void setRoomType(String roomType) {
-        this.roomType = roomType;
-    }
 }

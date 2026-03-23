@@ -22,13 +22,13 @@ public class CheckInService {
         this.roomRepo = roomRepo;
     }
 
-    public CheckIn processCheckIn(Guest guestData, Double advancePayment) {
+    public CheckIn processCheckIn(Guest guestData, String roomType, Double advancePayment) {
         Guest savedGuest = guestRepo.save(guestData);
 
         Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
-                .filter(r -> savedGuest.getRoomType().equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
+                .filter(r -> roomType.equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + savedGuest.getRoomType()));
+                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + roomType));
 
         room.setAvailabilityStatus("OCCUPIED");
         roomRepo.save(room);
