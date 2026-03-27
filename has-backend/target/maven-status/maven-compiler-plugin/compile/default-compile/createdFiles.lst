@@ -1,6 +1,8 @@
 org/example/Main.class
 com/has/backend/service/CateringService.class
 com/has/backend/entity/OccupancyRecord.class
+com/has/backend/controller/BillingController.class
+com/has/backend/controller/CheckInController.class
 com/has/backend/repository/FrequentGuestRepository.class
 com/has/backend/entity/SystemSettings.class
 com/has/backend/service/OccupancyService.class

@@ -1,4 +1,6 @@
 /Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/HasBackendApplication.java
+/Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/controller/BillingController.java
+/Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/controller/CheckInController.java
 /Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/entity/Bill.java
 /Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/entity/CateringOrder.java
 /Users/saranmacbook/IdeaProjects/HAS/has-backend/src/main/java/com/has/backend/entity/CheckIn.java
