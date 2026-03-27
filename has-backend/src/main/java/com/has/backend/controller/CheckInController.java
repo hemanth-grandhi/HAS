@@ -29,3 +29,4 @@ public class CheckInController {
         return service.processCheckIn(guestData, roomType, advancePayment);
     }
 }
+
