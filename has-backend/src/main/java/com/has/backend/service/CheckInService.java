@@ -4,6 +4,7 @@ import com.has.backend.entity.*;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -41,5 +42,14 @@ public class CheckInService {
         checkIn.setCheckInDate(LocalDateTime.now());
 
         return checkInRepo.save(checkIn);
+    }
+
+    public CheckIn getCheckInByToken(String tokenNumber) {
+        return checkInRepo.findByTokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Check-in not found for token: " + tokenNumber));
+    }
+
+    public List<CheckIn> getAllCheckIns() {
+        return checkInRepo.findAll();
     }
 }

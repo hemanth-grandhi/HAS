@@ -4,6 +4,7 @@ import com.has.backend.entity.*;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CateringService {
@@ -27,5 +28,13 @@ public class CateringService {
         order.setDateTime(LocalDateTime.now());
 
         return cateringRepo.save(order);
+    }
+
+    public List<CateringOrder> getOrdersByToken(String tokenNumber) {
+        return cateringRepo.findByCheckIn_TokenNumber(tokenNumber);
+    }
+
+    public List<CateringOrder> getAllOrders() {
+        return cateringRepo.findAll();
     }
 }
