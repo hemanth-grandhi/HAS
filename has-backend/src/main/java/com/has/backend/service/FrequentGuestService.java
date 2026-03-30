@@ -24,4 +24,22 @@ public class FrequentGuestService {
         fg.setDiscountTier("BRONZE");
         return fgRepo.save(fg);
     }
+
+    public FrequentGuest getFrequentGuest(String frequentGuestId) {
+        return fgRepo.findById(frequentGuestId)
+                .orElseThrow(() -> new RuntimeException("Frequent guest not found: " + frequentGuestId));
+    }
+
+    public FrequentGuest updateRewards(String frequentGuestId, Integer rewardPoints, String discountTier) {
+        FrequentGuest fg = fgRepo.findById(frequentGuestId)
+                .orElseThrow(() -> new RuntimeException("Frequent guest not found: " + frequentGuestId));
+
+        if (rewardPoints != null) {
+            fg.setRewardPoints(rewardPoints);
+        }
+        if (discountTier != null) {
+            fg.setDiscountTier(discountTier);
+        }
+        return fgRepo.save(fg);
+    }
 }

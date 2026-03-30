@@ -60,4 +60,14 @@ public class BillingService {
         room.setAvailabilityStatus("VACANT");
         roomRepo.save(room);
     }
+
+    public Bill getBillById(Long billId) {
+        return billRepo.findById(billId)
+                .orElseThrow(() -> new RuntimeException("Bill not found with ID: " + billId));
+    }
+
+    public Bill getBillByToken(String tokenNumber) {
+        return billRepo.findByCheckIn_TokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Bill not found for token: " + tokenNumber));
+    }
 }

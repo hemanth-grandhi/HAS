@@ -4,10 +4,8 @@ import com.has.backend.entity.Room;
 import com.has.backend.entity.SystemSettings;
 import com.has.backend.entity.SystemUser;
 import com.has.backend.service.AdminService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -31,5 +29,35 @@ public class AdminController {
     @PostMapping("/settings")
     public SystemSettings updateSettings(@RequestBody SystemSettings settings) {
         return service.updateSettings(settings);
+    }
+
+    @GetMapping("/rooms")
+    public List<Room> getAllRooms() {
+        return service.getAllRooms();
+    }
+
+    @GetMapping("/rooms/{roomId}")
+    public Room getRoomById(@PathVariable Long roomId) {
+        return service.getRoomById(roomId);
+    }
+
+    @PutMapping("/rooms/{roomId}")
+    public Room updateRoom(@PathVariable Long roomId, @RequestBody Room roomData) {
+        return service.updateRoom(roomId, roomData);
+    }
+
+    @DeleteMapping("/rooms/{roomId}")
+    public void deleteRoom(@PathVariable Long roomId) {
+        service.deleteRoom(roomId);
+    }
+
+    @GetMapping("/users")
+    public List<SystemUser> getAllUsers() {
+        return service.getAllUsers();
+    }
+
+    @GetMapping("/settings")
+    public SystemSettings getSettings() {
+        return service.getSettings();
     }
 }

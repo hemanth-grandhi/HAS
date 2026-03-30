@@ -4,6 +4,7 @@ import com.has.backend.entity.*;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -43,5 +44,25 @@ public class ReservationService {
         reservationRepo.save(res);
 
         return token;
+    }
+
+    public Reservation getReservationByToken(String tokenNumber) {
+        return reservationRepo.findByTokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+    }
+
+    public List<Reservation> getAllReservations() {
+        return reservationRepo.findAll();
+    }
+
+    public void cancelReservation(String tokenNumber) {
+        Reservation reservation = reservationRepo.findByTokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+
+        Room room = reservation.getRoom();
+        room.setAvailabilityStatus("AVAILABLE");
+        roomRepo.save(room);
+
+        reservationRepo.delete(reservation);
     }
 }
