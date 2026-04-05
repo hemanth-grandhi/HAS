@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "frequent_guests")
 public class FrequentGuest {
     @Id
-    private String frequentGuestId;
+    private int frequentGuestId;
 
     @OneToOne
     @JoinColumn(name = "guest_id", nullable = false)
@@ -15,11 +15,11 @@ public class FrequentGuest {
     private String discountTier;
     private Integer rewardPoints;
 
-    public String getFrequentGuestId() {
+    public int getFrequentGuestId() {
         return frequentGuestId;
     }
 
-    public void setFrequentGuestId(String frequentGuestId) {
+    public void setFrequentGuestId(int frequentGuestId) {
         this.frequentGuestId = frequentGuestId;
     }
 

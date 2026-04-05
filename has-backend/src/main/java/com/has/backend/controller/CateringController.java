@@ -2,11 +2,13 @@ package com.has.backend.controller;
 
 import com.has.backend.entity.*;
 import com.has.backend.service.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/catering")
+@PreAuthorize("hasRole('CATERING_MANAGER')")
 public class CateringController {
     private final CateringService service;
 

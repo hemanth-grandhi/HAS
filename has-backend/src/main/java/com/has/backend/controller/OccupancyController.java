@@ -3,6 +3,7 @@ package com.has.backend.controller;
 import com.has.backend.entity.OccupancyRecord;
 import com.has.backend.service.OccupancyService;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/occupancy")
+@PreAuthorize("hasRole('HOTEL_MANAGER')")
 public class OccupancyController {
     private final OccupancyService service;
 

@@ -35,8 +35,8 @@ public class GuestService {
         if (guestData.getArrivalDate() != null) {
             guest.setArrivalDate(guestData.getArrivalDate());
         }
-        if (guestData.getExpectedDuration() != null) {
-            guest.setExpectedDuration(guestData.getExpectedDuration());
+        if (guestData.getExpectedCheckOutDate() != null) {
+            guest.setExpectedCheckOutDate(guestData.getExpectedCheckOutDate());
         }
         return guestRepo.save(guest);
     }

@@ -4,11 +4,13 @@ import com.has.backend.entity.Room;
 import com.has.backend.entity.SystemSettings;
 import com.has.backend.entity.SystemUser;
 import com.has.backend.service.AdminService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
+@PreAuthorize("hasRole('ADMINISTRATOR')")
 public class AdminController {
     private final AdminService service;
 
