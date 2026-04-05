@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "system_users")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type")
 public class SystemUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

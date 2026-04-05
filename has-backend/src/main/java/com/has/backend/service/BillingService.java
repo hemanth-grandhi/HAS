@@ -37,7 +37,7 @@ public class BillingService {
         Double currentTariff = room.getCurrentTariff() != null ? room.getCurrentTariff() : room.getBaseTariff();
         double roomCharges = days * currentTariff;
 
-        double cateringCharges = cateringRepo.findByCheckIn_TokenNumber(tokenNumber)
+        double cateringCharges = cateringRepo.findByTokenNumber(tokenNumber)
                 .stream().mapToDouble(CateringOrder::getCharges).sum();
 
         double discount = 0.0;
@@ -57,7 +57,7 @@ public class BillingService {
     public void confirmPayment(Long billId) {
         Bill bill = billRepo.findById(billId).orElseThrow(() -> new RuntimeException("Bill not found"));
         Room room = bill.getCheckIn().getRoom();
-        room.setAvailabilityStatus("VACANT");
+        room.setAvailabilityStatus("AVAILABLE");
         roomRepo.save(room);
     }
 

@@ -19,12 +19,12 @@ public class FrequentGuestController {
     }
 
     @GetMapping("/{frequentGuestId}")
-    public FrequentGuest getFrequentGuest(@PathVariable String frequentGuestId) {
+    public FrequentGuest getFrequentGuest(@PathVariable int frequentGuestId) {
         return service.getFrequentGuest(frequentGuestId);
     }
 
     @PutMapping("/{frequentGuestId}/rewards")
-    public FrequentGuest updateRewards(@PathVariable String frequentGuestId,
+    public FrequentGuest updateRewards(@PathVariable int frequentGuestId,
             @RequestParam(required = false) Integer rewardPoints,
             @RequestParam(required = false) String discountTier) {
         return service.updateRewards(frequentGuestId, rewardPoints, discountTier);

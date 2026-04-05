@@ -10,9 +10,7 @@ public class CateringOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;
 
-    @ManyToOne
-    @JoinColumn(name = "check_in_id", nullable = false)
-    private CheckIn checkIn;
+    private String tokenNumber;
 
     private String foodItemName;
     private Integer quantity;
@@ -27,12 +25,12 @@ public class CateringOrder {
         this.orderId = orderId;
     }
 
-    public CheckIn getCheckIn() {
-        return checkIn;
+    public String getTokenNumber() {
+        return tokenNumber;
     }
 
-    public void setCheckIn(CheckIn checkIn) {
-        this.checkIn = checkIn;
+    public void setTokenNumber(String tokenNumber) {
+        this.tokenNumber = tokenNumber;
     }
 
     public String getFoodItemName() {

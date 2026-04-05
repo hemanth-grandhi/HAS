@@ -21,9 +21,8 @@ public class Guest {
     @NotNull(message = "Arrival date cannot be null")
     private LocalDate arrivalDate;
 
-    @NotNull(message = "Expected duration cannot be null")
-    @Min(value = 1, message = "Expected duration must be at least 1 day")
-    private Integer expectedDuration;
+    @NotNull(message = "Expected check-out date cannot be null")
+    private LocalDate expectedCheckOutDate;
 
     public Long getGuestId() {
         return guestId;
@@ -57,12 +56,12 @@ public class Guest {
         this.arrivalDate = arrivalDate;
     }
 
-    public Integer getExpectedDuration() {
-        return expectedDuration;
+    public LocalDate getExpectedCheckOutDate() {
+        return expectedCheckOutDate;
     }
 
-    public void setExpectedDuration(Integer expectedDuration) {
-        this.expectedDuration = expectedDuration;
+    public void setExpectedCheckOutDate(LocalDate expectedCheckOutDate) {
+        this.expectedCheckOutDate = expectedCheckOutDate;
     }
 
 }

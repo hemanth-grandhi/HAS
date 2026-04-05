@@ -40,6 +40,7 @@ public class CheckInService {
         checkIn.setRoom(room);
         checkIn.setAdvancePayment(advancePayment);
         checkIn.setCheckInDate(LocalDateTime.now());
+        checkIn.setExpectedCheckOutDate(guestData.getExpectedCheckOutDate().atTime(11, 0));
 
         return checkInRepo.save(checkIn);
     }
