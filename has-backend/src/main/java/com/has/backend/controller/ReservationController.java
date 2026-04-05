@@ -2,6 +2,7 @@ package com.has.backend.controller;
 
 import com.has.backend.entity.*;
 import com.has.backend.service.*;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
@@ -18,8 +19,10 @@ public class ReservationController {
 
     @PostMapping
     public String makeReservation(@Valid @RequestBody Guest guest,
-            @RequestParam String roomType) {
-        return service.makeReservation(guest, roomType, LocalDateTime.now());
+            @RequestParam String roomType,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return service.makeReservation(guest, roomType, startDate, endDate);
     }
 
     @GetMapping("/{tokenNumber}")
@@ -30,6 +33,14 @@ public class ReservationController {
     @GetMapping
     public List<Reservation> getAllReservations() {
         return service.getAllReservations();
+    }
+
+    @GetMapping("/lookup")
+    public List<Reservation> lookupReservations(
+            @RequestParam String name,
+            @RequestParam String contactNumber
+    ) {
+        return service.findReservationsByGuestDetails(name, contactNumber);
     }
 
     @DeleteMapping("/{tokenNumber}")

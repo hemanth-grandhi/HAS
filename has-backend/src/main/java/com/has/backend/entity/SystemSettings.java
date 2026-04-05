@@ -10,6 +10,8 @@ public class SystemSettings {
     private Long settingId;
 
     private String discountTier;
+    private Double discountPercentage;
+    private Integer rewardPointsPerStay;
     private Integer rewardPointThreshold;
     private Double occupancyThreshold;
 
@@ -27,6 +29,22 @@ public class SystemSettings {
 
     public void setDiscountTier(String discountTier) {
         this.discountTier = discountTier;
+    }
+
+    public Double getDiscountPercentage() {
+        return discountPercentage;
+    }
+
+    public void setDiscountPercentage(Double discountPercentage) {
+        this.discountPercentage = discountPercentage;
+    }
+
+    public Integer getRewardPointsPerStay() {
+        return rewardPointsPerStay;
+    }
+
+    public void setRewardPointsPerStay(Integer rewardPointsPerStay) {
+        this.rewardPointsPerStay = rewardPointsPerStay;
     }
 
     public Integer getRewardPointThreshold() {
