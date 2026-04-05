@@ -12,17 +12,23 @@ public class CheckInService {
     private final CheckInRepository checkInRepo;
     private final GuestRepository guestRepo;
     private final RoomRepository roomRepo;
+    private final ReservationRepository reservationRepo;
 
     public CheckInService(
             CheckInRepository checkInRepo,
             GuestRepository guestRepo,
-            RoomRepository roomRepo
+            RoomRepository roomRepo,
+            ReservationRepository reservationRepo
     ) {
         this.checkInRepo = checkInRepo;
         this.guestRepo = guestRepo;
         this.roomRepo = roomRepo;
+        this.reservationRepo = reservationRepo;
     }
 
+    /**
+     * Walk-in check-in: creates a brand new check-in with a new token.
+     */
     public CheckIn processCheckIn(Guest guestData, String roomType, Double advancePayment) {
         Guest savedGuest = guestRepo.save(guestData);
 
@@ -41,6 +47,31 @@ public class CheckInService {
         checkIn.setAdvancePayment(advancePayment);
         checkIn.setCheckInDate(LocalDateTime.now());
         checkIn.setExpectedCheckOutDate(guestData.getExpectedCheckOutDate().atTime(11, 0));
+
+        return checkInRepo.save(checkIn);
+    }
+
+    /**
+     * Reservation-based check-in: converts an existing reservation into an active check-in.
+     * Reuses the reservation's token number, guest, and room.
+     */
+    public CheckIn processCheckIn(String tokenNumber, Double advancePayment) {
+        Reservation reservation = reservationRepo.findByTokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+
+        Room room = reservation.getRoom();
+        room.setAvailabilityStatus("OCCUPIED");
+        roomRepo.save(room);
+
+        CheckIn checkIn = new CheckIn();
+        checkIn.setTokenNumber(reservation.getTokenNumber());
+        checkIn.setGuest(reservation.getGuest());
+        checkIn.setRoom(room);
+        checkIn.setAdvancePayment(advancePayment);
+        checkIn.setCheckInDate(LocalDateTime.now());
+
+        // Remove the reservation since it's now an active check-in
+        reservationRepo.delete(reservation);
 
         return checkInRepo.save(checkIn);
     }

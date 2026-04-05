@@ -18,7 +18,8 @@ public class Reservation {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    private LocalDateTime reservationDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private String tokenNumber;
     private String roomType;
 
@@ -46,12 +47,20 @@ public class Reservation {
         this.room = room;
     }
 
-    public LocalDateTime getReservationDate() {
-        return reservationDate;
+    public LocalDateTime getStartDate() {
+        return startDate;
     }
 
-    public void setReservationDate(LocalDateTime reservationDate) {
-        this.reservationDate = reservationDate;
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
     }
 
     public String getTokenNumber() {

@@ -33,6 +33,14 @@ public class CheckInController {
         return service.processCheckIn(guestData, roomType, advancePayment);
     }
 
+    @PostMapping("/from-reservation")
+    public CheckIn processCheckInFromReservation(
+            @RequestParam String tokenNumber,
+            @RequestParam Double advancePayment
+    ) {
+        return service.processCheckIn(tokenNumber, advancePayment);
+    }
+
     @GetMapping("/{tokenNumber}")
     public CheckIn getCheckIn(@PathVariable String tokenNumber) {
         return service.getCheckInByToken(tokenNumber);

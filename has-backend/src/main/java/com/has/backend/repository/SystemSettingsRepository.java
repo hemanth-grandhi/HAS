@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface SystemSettingsRepository extends JpaRepository<SystemSettings, Long> {
     Optional<SystemSettings> findFirstByOrderBySettingIdAsc();
+    Optional<SystemSettings> findByDiscountTier(String discountTier);
 }
