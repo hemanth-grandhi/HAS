@@ -23,27 +23,49 @@ public class ReservationService {
         this.guestRepo = guestRepo;
     }
 
-    public String makeReservation(Guest guest, String roomType, LocalDateTime date) {
-        Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
-                .filter(r -> roomType.equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + roomType));
+    public String makeReservation(Guest guest, String roomType, LocalDateTime startDate, LocalDateTime endDate) {
+        if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
+            throw new RuntimeException("endDate must be after startDate");
+        }
 
-        room.setAvailabilityStatus("RESERVED");
-        roomRepo.save(room);
+        // Parse the single-string roomType (e.g. "Single AC" -> occupancyType="Single", acStatus="AC")
+        String[] parts = roomType.trim().split("\\s+", 2);
+        if (parts.length < 2) {
+            throw new RuntimeException("Invalid roomType format. Expected: '<OccupancyType> <AcStatus>' (e.g. 'Single AC')");
+        }
+        String occupancyType = parts[0];
+        String acStatus = parts[1];
+
+        // Find candidate rooms matching the requested type, excluding out-of-service rooms
+        List<Room> candidateRooms = roomRepo.findByOccupancyTypeAndAcStatus(occupancyType, acStatus).stream()
+                .filter(r -> !"OUT_OF_SERVICE".equalsIgnoreCase(r.getAvailabilityStatus()))
+                .toList();
+
+        if (candidateRooms.isEmpty()) {
+            throw new RuntimeException("No rooms exist of type: " + roomType);
+        }
+
+        // Find the first room with no overlapping reservations for the requested dates
+        Room availableRoom = candidateRooms.stream()
+                .filter(r -> reservationRepo.findOverlappingReservations(r.getRoomId(), startDate, endDate).isEmpty())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException(
+                        "Sorry! No available rooms of type '" + roomType + "' for the requested dates"));
 
         guestRepo.save(guest);
 
+        // Token is generated and stored internally — not returned to the guest
         String token = UUID.randomUUID().toString();
         Reservation res = new Reservation();
         res.setGuest(guest);
-        res.setRoom(room);
+        res.setRoom(availableRoom);
         res.setRoomType(roomType);
-        res.setReservationDate(date);
+        res.setStartDate(startDate);
+        res.setEndDate(endDate);
         res.setTokenNumber(token);
         reservationRepo.save(res);
 
-        return token;
+        return "Reservation confirmed for " + guest.getName() + " (" + roomType + ") from " + startDate + " to " + endDate;
     }
 
     public Reservation getReservationByToken(String tokenNumber) {
@@ -55,13 +77,17 @@ public class ReservationService {
         return reservationRepo.findAll();
     }
 
+    /**
+     * Looks up reservations by guest name and contact number.
+     * Used by the receptionist at check-in to find a guest's reservation.
+     */
+    public List<Reservation> findReservationsByGuestDetails(String name, String contactNumber) {
+        return reservationRepo.findByGuest_NameAndGuest_ContactNumber(name, contactNumber);
+    }
+
     public void cancelReservation(String tokenNumber) {
         Reservation reservation = reservationRepo.findByTokenNumber(tokenNumber)
                 .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
-
-        Room room = reservation.getRoom();
-        room.setAvailabilityStatus("AVAILABLE");
-        roomRepo.save(room);
 
         reservationRepo.delete(reservation);
     }

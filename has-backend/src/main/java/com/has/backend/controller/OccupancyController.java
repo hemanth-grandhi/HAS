@@ -3,6 +3,7 @@ package com.has.backend.controller;
 import com.has.backend.entity.OccupancyRecord;
 import com.has.backend.service.OccupancyService;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -22,6 +23,11 @@ public class OccupancyController {
     @GetMapping("/report")
     public List<OccupancyRecord> getOccupancyReport() {
         return service.getOccupancyReport();
+    }
+
+    @GetMapping("/realtime")
+    public Map<String, Object> getRealTimeOccupancy() {
+        return service.calculateRealTimeOccupancy();
     }
 
     @PutMapping("/tariff/{roomId}")
