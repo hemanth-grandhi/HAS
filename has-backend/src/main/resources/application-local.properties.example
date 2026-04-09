@@ -2,8 +2,8 @@ spring.application.name=has-backend
 
 # PostgreSQL Database Configuration
 spring.datasource.url=jdbc:postgresql://localhost:5432/has_db
-spring.datasource.username=saranmacbook
-spring.datasource.password=1526
+spring.datasource.username=your_db_user
+spring.datasource.password=your_db_password
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA and Hibernate Configuration
