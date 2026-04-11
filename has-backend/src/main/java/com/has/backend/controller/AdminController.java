@@ -1,9 +1,13 @@
 package com.has.backend.controller;
 
+import com.has.backend.dto.CreateUserRequest;
 import com.has.backend.entity.Room;
 import com.has.backend.entity.SystemSettings;
 import com.has.backend.entity.SystemUser;
 import com.has.backend.service.AdminService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -19,47 +23,48 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public SystemUser createUser(@RequestBody SystemUser user) {
-        return service.createUser(user);
+    public ResponseEntity<SystemUser> createUser(@Valid @RequestBody CreateUserRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(request));
     }
 
     @PostMapping("/rooms")
-    public Room configureRoom(@RequestBody Room room) {
-        return service.configureRoom(room);
+    public ResponseEntity<Room> configureRoom(@RequestBody Room room) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.configureRoom(room));
     }
 
-    @PostMapping("/settings")
-    public SystemSettings updateSettings(@RequestBody SystemSettings settings) {
-        return service.updateSettings(settings);
+    @PutMapping("/settings")
+    public ResponseEntity<SystemSettings> updateSettings(@RequestBody SystemSettings settings) {
+        return ResponseEntity.ok(service.updateSettings(settings));
     }
 
     @GetMapping("/rooms")
-    public List<Room> getAllRooms() {
-        return service.getAllRooms();
+    public ResponseEntity<List<Room>> getAllRooms() {
+        return ResponseEntity.ok(service.getAllRooms());
     }
 
     @GetMapping("/rooms/{roomId}")
-    public Room getRoomById(@PathVariable Long roomId) {
-        return service.getRoomById(roomId);
+    public ResponseEntity<Room> getRoomById(@PathVariable Long roomId) {
+        return ResponseEntity.ok(service.getRoomById(roomId));
     }
 
     @PutMapping("/rooms/{roomId}")
-    public Room updateRoom(@PathVariable Long roomId, @RequestBody Room roomData) {
-        return service.updateRoom(roomId, roomData);
+    public ResponseEntity<Room> updateRoom(@PathVariable Long roomId, @RequestBody Room roomData) {
+        return ResponseEntity.ok(service.updateRoom(roomId, roomData));
     }
 
     @DeleteMapping("/rooms/{roomId}")
-    public void deleteRoom(@PathVariable Long roomId) {
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
         service.deleteRoom(roomId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/users")
-    public List<SystemUser> getAllUsers() {
-        return service.getAllUsers();
+    public ResponseEntity<List<SystemUser>> getAllUsers() {
+        return ResponseEntity.ok(service.getAllUsers());
     }
 
     @GetMapping("/settings")
-    public SystemSettings getSettings() {
-        return service.getSettings();
+    public ResponseEntity<SystemSettings> getSettings() {
+        return ResponseEntity.ok(service.getSettings());
     }
 }

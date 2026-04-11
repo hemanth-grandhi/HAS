@@ -2,14 +2,13 @@ package com.has.backend.controller;
 
 import com.has.backend.entity.Bill;
 import com.has.backend.service.BillingService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/billing")
+@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
 public class BillingController {
     private final BillingService service;
 
@@ -18,22 +17,23 @@ public class BillingController {
     }
 
     @PostMapping("/checkout/{tokenNumber}")
-    public Bill processCheckout(@PathVariable String tokenNumber) {
-        return service.processCheckout(tokenNumber);
+    public ResponseEntity<Bill> processCheckout(@PathVariable String tokenNumber) {
+        return ResponseEntity.ok(service.processCheckout(tokenNumber));
     }
 
-    @PostMapping("/confirm-payment/{billId}")
-    public void confirmPayment(@PathVariable Long billId) {
+    @PatchMapping("/confirm-payment/{billId}")
+    public ResponseEntity<Void> confirmPayment(@PathVariable Long billId) {
         service.confirmPayment(billId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{billId}")
-    public Bill getBillById(@PathVariable Long billId) {
-        return service.getBillById(billId);
+    public ResponseEntity<Bill> getBillById(@PathVariable Long billId) {
+        return ResponseEntity.ok(service.getBillById(billId));
     }
 
     @GetMapping("/by-token/{tokenNumber}")
-    public Bill getBillByToken(@PathVariable String tokenNumber) {
-        return service.getBillByToken(tokenNumber);
+    public ResponseEntity<Bill> getBillByToken(@PathVariable String tokenNumber) {
+        return ResponseEntity.ok(service.getBillByToken(tokenNumber));
     }
 }

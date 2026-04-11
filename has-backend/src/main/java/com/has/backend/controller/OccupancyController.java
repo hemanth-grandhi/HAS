@@ -1,16 +1,14 @@
 package com.has.backend.controller;
 
+import com.has.backend.dto.TariffRevisionRequest;
 import com.has.backend.entity.OccupancyRecord;
 import com.has.backend.service.OccupancyService;
+import jakarta.validation.Valid;
 import java.util.List;
-import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/occupancy")
@@ -23,17 +21,20 @@ public class OccupancyController {
     }
 
     @GetMapping("/report")
-    public List<OccupancyRecord> getOccupancyReport() {
-        return service.getOccupancyReport();
+    public ResponseEntity<List<OccupancyRecord>> getOccupancyReport() {
+        return ResponseEntity.ok(service.getOccupancyReport());
     }
 
     @GetMapping("/realtime")
-    public Map<String, Object> getRealTimeOccupancy() {
-        return service.calculateRealTimeOccupancy();
+    public ResponseEntity<Map<String, Object>> getRealTimeOccupancy() {
+        return ResponseEntity.ok(service.calculateRealTimeOccupancy());
     }
 
     @PutMapping("/tariff/{roomId}")
-    public void reviseTariff(@PathVariable Long roomId, @RequestParam Double percentage) {
-        service.reviseTariff(roomId, percentage);
+    public ResponseEntity<Void> reviseTariff(
+            @PathVariable Long roomId,
+            @Valid @RequestBody TariffRevisionRequest request) {
+        service.reviseTariff(roomId, request.getPercentage());
+        return ResponseEntity.noContent().build();
     }
 }
