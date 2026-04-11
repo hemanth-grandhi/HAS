@@ -1,7 +1,11 @@
 package com.has.backend.controller;
 
+import com.has.backend.dto.CateringOrderRequest;
 import com.has.backend.entity.*;
 import com.has.backend.service.*;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -17,18 +21,23 @@ public class CateringController {
     }
 
     @PostMapping("/log")
-    public CateringOrder logConsumption(@RequestParam String tokenNumber, @RequestParam String foodItemName,
-            @RequestParam int quantity, @RequestParam double charges) {
-        return service.logConsumption(tokenNumber, foodItemName, quantity, charges);
+    public ResponseEntity<CateringOrder> logConsumption(@Valid @RequestBody CateringOrderRequest request) {
+        CateringOrder order = service.logConsumption(
+                request.getTokenNumber(),
+                request.getFoodItemName(),
+                request.getQuantity(),
+                request.getCharges()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
     @GetMapping("/{tokenNumber}")
-    public List<CateringOrder> getOrdersByToken(@PathVariable String tokenNumber) {
-        return service.getOrdersByToken(tokenNumber);
+    public ResponseEntity<List<CateringOrder>> getOrdersByToken(@PathVariable String tokenNumber) {
+        return ResponseEntity.ok(service.getOrdersByToken(tokenNumber));
     }
 
     @GetMapping
-    public List<CateringOrder> getAllOrders() {
-        return service.getAllOrders();
+    public ResponseEntity<List<CateringOrder>> getAllOrders() {
+        return ResponseEntity.ok(service.getAllOrders());
     }
 }

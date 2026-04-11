@@ -1,5 +1,6 @@
 package com.has.backend.service;
 
+import com.has.backend.dto.CreateUserRequest;
 import com.has.backend.entity.*;
 import com.has.backend.repository.*;
 import jakarta.annotation.PostConstruct;
@@ -28,7 +29,12 @@ public class AdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public SystemUser createUser(SystemUser user) {
+    public SystemUser createUser(CreateUserRequest request) {
+        SystemUser user = new SystemUser();
+        user.setName(request.getName());
+        user.setRole(request.getRole());
+        user.setCredentials(request.getCredentials());
+        user.setActive(request.isActive());
         return userRepo.save(toConcreteUser(user));
     }
 
