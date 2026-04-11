@@ -110,15 +110,16 @@ public class AdminService {
             throw new RuntimeException("User role is required");
         }
 
-        SystemUser concreteUser = switch (role.trim().toLowerCase()) {
-            case "administrator" -> new Administrator();
-            case "hotelmanager", "hotel manager" -> new HotelManager();
-            case "cateringmanager", "catering manager" -> new CateringManager();
-            case "receptionist" -> new Receptionist();
+        String normalizedRole = normalizeRole(role);
+
+        SystemUser concreteUser = switch (normalizedRole) {
+            case "ADMINISTRATOR" -> new Administrator();
+            case "HOTEL_MANAGER" -> new HotelManager();
+            case "CATERING_MANAGER" -> new CateringManager();
+            case "RECEPTIONIST" -> new Receptionist();
             default -> throw new RuntimeException("Unsupported user role: " + role);
         };
 
-        String normalizedRole = normalizeRole(role);
         concreteUser.setName(user.getName());
         concreteUser.setRole(normalizedRole);
         concreteUser.setCredentials(passwordEncoder.encode(user.getCredentials()));
@@ -133,9 +134,22 @@ public class AdminService {
     }
 
     private String normalizeRole(String role) {
-        return role.trim()
+        String trimmed = role.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+
+        String normalized = trimmed
+                .replace('-', '_')
                 .replace(' ', '_')
                 .replaceAll("([a-z])([A-Z])", "$1_$2")
+                .replaceAll("_+", "_")
                 .toUpperCase();
+
+        return switch (normalized) {
+            case "HOTELMANAGER" -> "HOTEL_MANAGER";
+            case "CATERINGMANAGER" -> "CATERING_MANAGER";
+            default -> normalized;
+        };
     }
 }

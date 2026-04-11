@@ -8,13 +8,12 @@ import com.has.backend.service.CheckInService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/checkins")
-@PreAuthorize("hasRole('RECEPTIONIST')")
 public class CheckInController {
     private final CheckInService service;
 
@@ -29,6 +28,9 @@ public class CheckInController {
         guest.setContactNumber(request.getContactNumber());
         guest.setArrivalDate(request.getArrivalDate());
         guest.setExpectedCheckOutDate(request.getExpectedCheckOutDate());
+        guest.setExpectedDuration((int) Math.max(1,
+                ChronoUnit.DAYS.between(request.getArrivalDate(), request.getExpectedCheckOutDate())));
+        guest.setRoomType(request.getRoomType());
 
         CheckIn checkIn = service.processCheckIn(guest, request.getRoomType(), request.getAdvancePayment());
         return ResponseEntity.status(HttpStatus.CREATED).body(checkIn);
@@ -37,7 +39,7 @@ public class CheckInController {
     @PostMapping("/from-reservation")
     public ResponseEntity<CheckIn> processCheckInFromReservation(
             @Valid @RequestBody CheckInFromReservationRequest request) {
-        CheckIn checkIn = service.processCheckIn(request.getTokenNumber(), request.getAdvancePayment());
+        CheckIn checkIn = service.processCheckIn(request.getReservationId(), request.getAdvancePayment());
         return ResponseEntity.status(HttpStatus.CREATED).body(checkIn);
     }
 

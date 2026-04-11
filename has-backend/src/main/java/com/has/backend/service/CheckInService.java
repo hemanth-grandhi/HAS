@@ -5,7 +5,7 @@ import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class CheckInService {
@@ -41,7 +41,7 @@ public class CheckInService {
         roomRepo.save(room);
 
         CheckIn checkIn = new CheckIn();
-        checkIn.setTokenNumber(UUID.randomUUID().toString());
+        checkIn.setTokenNumber(generateTokenNumber());
         checkIn.setGuest(savedGuest);
         checkIn.setRoom(room);
         checkIn.setAdvancePayment(advancePayment);
@@ -55,20 +55,21 @@ public class CheckInService {
      * Reservation-based check-in: converts an existing reservation into an active check-in.
      * Reuses the reservation's token number, guest, and room.
      */
-    public CheckIn processCheckIn(String tokenNumber, Double advancePayment) {
-        Reservation reservation = reservationRepo.findByTokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+    public CheckIn processCheckIn(Long reservationId, Double advancePayment) {
+        Reservation reservation = reservationRepo.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for ID: " + reservationId));
 
         Room room = reservation.getRoom();
         room.setAvailabilityStatus("OCCUPIED");
         roomRepo.save(room);
 
         CheckIn checkIn = new CheckIn();
-        checkIn.setTokenNumber(reservation.getTokenNumber());
+        checkIn.setTokenNumber(generateTokenNumber());
         checkIn.setGuest(reservation.getGuest());
         checkIn.setRoom(room);
         checkIn.setAdvancePayment(advancePayment);
         checkIn.setCheckInDate(LocalDateTime.now());
+        checkIn.setExpectedCheckOutDate(reservation.getGuest().getExpectedCheckOutDate().atTime(11, 0));
 
         // Remove the reservation since it's now an active check-in
         reservationRepo.delete(reservation);
@@ -83,5 +84,29 @@ public class CheckInService {
 
     public List<CheckIn> getAllCheckIns() {
         return checkInRepo.findAll();
+    }
+
+    private String generateTokenNumber() {
+        String tokenNumber;
+        do {
+            tokenNumber = randomLetters(4) + randomDigits(4);
+        } while (checkInRepo.findByTokenNumber(tokenNumber).isPresent());
+        return tokenNumber;
+    }
+
+    private String randomLetters(int count) {
+        StringBuilder value = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            value.append((char) ('A' + ThreadLocalRandom.current().nextInt(26)));
+        }
+        return value.toString();
+    }
+
+    private String randomDigits(int count) {
+        StringBuilder value = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            value.append(ThreadLocalRandom.current().nextInt(10));
+        }
+        return value.toString();
     }
 }

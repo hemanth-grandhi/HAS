@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
@@ -27,15 +28,18 @@ public class ReservationController {
         guest.setContactNumber(request.getContactNumber());
         guest.setArrivalDate(request.getArrivalDate());
         guest.setExpectedCheckOutDate(request.getExpectedCheckOutDate());
+        guest.setExpectedDuration((int) Math.max(1,
+                ChronoUnit.DAYS.between(request.getArrivalDate(), request.getExpectedCheckOutDate())));
+        guest.setRoomType(request.getRoomType());
 
         String token = service.makeReservation(guest, request.getRoomType(), request.getStartDate(), request.getEndDate());
         return ResponseEntity.status(HttpStatus.CREATED).body(token);
     }
 
-    @GetMapping("/{tokenNumber}")
+    @GetMapping("/{reservationId}")
     @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
-    public ResponseEntity<Reservation> getReservation(@PathVariable String tokenNumber) {
-        return ResponseEntity.ok(service.getReservationByToken(tokenNumber));
+    public ResponseEntity<Reservation> getReservation(@PathVariable Long reservationId) {
+        return ResponseEntity.ok(service.getReservationById(reservationId));
     }
 
     @GetMapping
@@ -52,10 +56,10 @@ public class ReservationController {
         return ResponseEntity.ok(service.findReservationsByGuestDetails(name, contactNumber));
     }
 
-    @DeleteMapping("/{tokenNumber}")
+    @DeleteMapping("/{reservationId}")
     @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
-    public ResponseEntity<Void> cancelReservation(@PathVariable String tokenNumber) {
-        service.cancelReservation(tokenNumber);
+    public ResponseEntity<Void> cancelReservation(@PathVariable Long reservationId) {
+        service.cancelReservation(reservationId);
         return ResponseEntity.noContent().build();
     }
 }
