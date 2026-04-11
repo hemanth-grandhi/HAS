@@ -9,13 +9,19 @@ import java.util.List;
 @Service
 public class CateringService {
     private final CateringOrderRepository cateringRepo;
+    private final CheckInRepository checkInRepo;
 
-    public CateringService(CateringOrderRepository cateringRepo) {
+    public CateringService(CateringOrderRepository cateringRepo, CheckInRepository checkInRepo) {
         this.cateringRepo = cateringRepo;
+        this.checkInRepo = checkInRepo;
     }
 
     public CateringOrder logConsumption(String tokenNumber, String foodItem, int quantity, double charges) {
+        CheckIn checkIn = checkInRepo.findByTokenNumber(tokenNumber)
+                .orElseThrow(() -> new RuntimeException("Check-in not found for token: " + tokenNumber));
+
         CateringOrder order = new CateringOrder();
+        order.setCheckIn(checkIn);
         order.setTokenNumber(tokenNumber);
         order.setFoodItemName(foodItem);
         order.setQuantity(quantity);

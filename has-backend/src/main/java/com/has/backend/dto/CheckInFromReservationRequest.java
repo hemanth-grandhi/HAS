@@ -1,20 +1,21 @@
 package com.has.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Positive;
 
 public class CheckInFromReservationRequest {
 
-    @NotBlank
-    private String tokenNumber;
+    @NotNull
+    @Positive
+    private Long reservationId;
 
     @NotNull
     @PositiveOrZero
     private Double advancePayment;
 
-    public String getTokenNumber() { return tokenNumber; }
-    public void setTokenNumber(String tokenNumber) { this.tokenNumber = tokenNumber; }
+    public Long getReservationId() { return reservationId; }
+    public void setReservationId(Long reservationId) { this.reservationId = reservationId; }
 
     public Double getAdvancePayment() { return advancePayment; }
     public void setAdvancePayment(Double advancePayment) { this.advancePayment = advancePayment; }

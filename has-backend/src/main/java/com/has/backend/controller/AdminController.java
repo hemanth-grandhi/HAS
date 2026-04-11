@@ -1,6 +1,7 @@
 package com.has.backend.controller;
 
 import com.has.backend.dto.CreateUserRequest;
+import com.has.backend.dto.UserResponse;
 import com.has.backend.entity.Room;
 import com.has.backend.entity.SystemSettings;
 import com.has.backend.entity.SystemUser;
@@ -23,8 +24,14 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<SystemUser> createUser(@Valid @RequestBody CreateUserRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createUser(request));
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
+        SystemUser createdUser = service.createUser(request);
+        UserResponse response = new UserResponse();
+        response.setUserId(createdUser.getUserId());
+        response.setName(createdUser.getName());
+        response.setRole(createdUser.getRole());
+        response.setActive(createdUser.isActive());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/rooms")

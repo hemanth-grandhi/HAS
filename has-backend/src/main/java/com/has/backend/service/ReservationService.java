@@ -5,7 +5,6 @@ import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ReservationService {
@@ -54,23 +53,21 @@ public class ReservationService {
 
         guestRepo.save(guest);
 
-        // Token is generated and stored internally — not returned to the guest
-        String token = UUID.randomUUID().toString();
         Reservation res = new Reservation();
         res.setGuest(guest);
         res.setRoom(availableRoom);
         res.setRoomType(roomType);
         res.setStartDate(startDate);
         res.setEndDate(endDate);
-        res.setTokenNumber(token);
         reservationRepo.save(res);
 
-        return "Reservation confirmed for " + guest.getName() + " (" + roomType + ") from " + startDate + " to " + endDate;
+        return "Reservation confirmed for " + guest.getName() + " (" + roomType + ") from " + startDate + " to " + endDate
+                + ". Reservation ID: " + res.getReservationId();
     }
 
-    public Reservation getReservationByToken(String tokenNumber) {
-        return reservationRepo.findByTokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+    public Reservation getReservationById(Long reservationId) {
+        return reservationRepo.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for ID: " + reservationId));
     }
 
     public List<Reservation> getAllReservations() {
@@ -85,9 +82,9 @@ public class ReservationService {
         return reservationRepo.findByGuest_NameAndGuest_ContactNumber(name, contactNumber);
     }
 
-    public void cancelReservation(String tokenNumber) {
-        Reservation reservation = reservationRepo.findByTokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Reservation not found for token: " + tokenNumber));
+    public void cancelReservation(Long reservationId) {
+        Reservation reservation = reservationRepo.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for ID: " + reservationId));
 
         reservationRepo.delete(reservation);
     }
