@@ -6,6 +6,7 @@ import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -34,6 +35,10 @@ public class BillingService {
     }
 
     public Bill processCheckout(String tokenNumber) {
+        return processCheckout(tokenNumber, false);
+    }
+
+    public Bill processCheckout(String tokenNumber, boolean registerFrequentGuest) {
         CheckIn checkIn = checkInRepo.findByTokenNumber(tokenNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Check-in not found for token: " + tokenNumber));
         checkIn.setActualCheckOutDate(LocalDateTime.now());
@@ -92,7 +97,13 @@ public class BillingService {
         bill.setAdvancePayment(advance);
         bill.setBalancePayable(subtotal - discount - advance);
 
-        return billRepo.save(bill);
+        Bill savedBill = billRepo.save(bill);
+
+        if (registerFrequentGuest) {
+            registerFrequentGuest(checkIn.getGuest());
+        }
+
+        return savedBill;
     }
 
     public void confirmPayment(Long billId) {
@@ -110,5 +121,57 @@ public class BillingService {
     public Bill getBillByToken(String tokenNumber) {
         return billRepo.findByCheckIn_TokenNumber(tokenNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Bill not found for token: " + tokenNumber));
+    }
+
+    public String generatePrintableBill(Long billId) {
+        Bill bill = getBillById(billId);
+        CheckIn checkIn = bill.getCheckIn();
+        Guest guest = checkIn.getGuest();
+        Room room = checkIn.getRoom();
+
+        return String.format(Locale.US,
+                """
+                HOTEL AUTOMATION SYSTEM - CUSTOMER BILL
+                ---------------------------------------
+                Bill ID: %d
+                Token Number: %s
+                Guest Name: %s
+                Room: %s %s (ID: %d)
+                Check-In: %s
+                Check-Out: %s
+
+                Room Charges: %.2f
+                Catering Charges: %.2f
+                Discount: %.2f
+                Advance Paid: %.2f
+                ---------------------------------------
+                Balance Amount Payable: %.2f
+                """,
+                bill.getBillId(),
+                checkIn.getTokenNumber(),
+                guest.getName(),
+                room.getOccupancyType(),
+                room.getAcStatus(),
+                room.getRoomId(),
+                checkIn.getCheckInDate(),
+                checkIn.getActualCheckOutDate(),
+                bill.getRoomCharges() != null ? bill.getRoomCharges() : 0.0,
+                bill.getCateringCharges() != null ? bill.getCateringCharges() : 0.0,
+                bill.getDiscountAmount() != null ? bill.getDiscountAmount() : 0.0,
+                bill.getAdvancePayment() != null ? bill.getAdvancePayment() : 0.0,
+                bill.getBalancePayable() != null ? bill.getBalancePayable() : 0.0);
+    }
+
+    private void registerFrequentGuest(Guest guest) {
+        if (frequentGuestRepo.findByGuest_GuestId(guest.getGuestId()).isPresent()) {
+            return;
+        }
+
+        FrequentGuest frequentGuest = new FrequentGuest();
+        frequentGuest.setFrequentGuestId(Math.toIntExact(guest.getGuestId()));
+        frequentGuest.setGuest(guest);
+        frequentGuest.setDiscountTier("BRONZE");
+        frequentGuest.setRewardPoints(0);
+        frequentGuestRepo.save(frequentGuest);
     }
 }

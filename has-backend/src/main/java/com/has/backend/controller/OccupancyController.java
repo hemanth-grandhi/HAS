@@ -2,6 +2,7 @@ package com.has.backend.controller;
 
 import com.has.backend.dto.TariffRevisionRequest;
 import com.has.backend.entity.OccupancyRecord;
+import com.has.backend.entity.TariffRevisionPlan;
 import com.has.backend.service.OccupancyService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -30,11 +31,28 @@ public class OccupancyController {
         return ResponseEntity.ok(service.calculateRealTimeOccupancy());
     }
 
+    @GetMapping("/report/monthly-average")
+    public ResponseEntity<Map<String, Object>> getMonthlyAverage(@RequestParam String month) {
+        return ResponseEntity.ok(service.getAverageOccupancyForMonth(month));
+    }
+
     @PutMapping("/tariff/{roomId}")
     public ResponseEntity<Void> reviseTariff(
             @PathVariable Long roomId,
             @Valid @RequestBody TariffRevisionRequest request) {
         service.reviseTariff(roomId, request.getPercentage());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/tariff/{roomId}/schedule-next-week")
+    public ResponseEntity<TariffRevisionPlan> scheduleTariffRevision(
+            @PathVariable Long roomId,
+            @Valid @RequestBody TariffRevisionRequest request) {
+        return ResponseEntity.ok(service.scheduleTariffForNextWeek(roomId, request.getPercentage()));
+    }
+
+    @GetMapping("/tariff/plans")
+    public ResponseEntity<List<TariffRevisionPlan>> getTariffPlans() {
+        return ResponseEntity.ok(service.getTariffRevisionPlans());
     }
 }
