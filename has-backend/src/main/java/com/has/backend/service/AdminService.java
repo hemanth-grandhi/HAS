@@ -120,7 +120,6 @@ public class AdminService {
             default -> throw new InvalidRequestException("Unsupported user role: " + role);
         };
 
-        String normalizedRole = normalizeRole(role);
         concreteUser.setName(user.getName());
         concreteUser.setRole(normalizedRole);
         concreteUser.setCredentials(passwordEncoder.encode(user.getCredentials()));
@@ -135,9 +134,22 @@ public class AdminService {
     }
 
     private String normalizeRole(String role) {
-        return role.trim()
+        String trimmed = role.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+
+        String normalized = trimmed
+                .replace('-', '_')
                 .replace(' ', '_')
                 .replaceAll("([a-z])([A-Z])", "$1_$2")
+                .replaceAll("_+", "_")
                 .toUpperCase();
+
+        return switch (normalized) {
+            case "HOTELMANAGER" -> "HOTEL_MANAGER";
+            case "CATERINGMANAGER" -> "CATERING_MANAGER";
+            default -> normalized;
+        };
     }
 }
