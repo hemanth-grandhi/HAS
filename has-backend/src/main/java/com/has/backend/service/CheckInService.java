@@ -1,6 +1,8 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.*;
+import com.has.backend.exception.ResourceNotFoundException;
+import com.has.backend.exception.RoomNotAvailableException;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -35,7 +37,7 @@ public class CheckInService {
         Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
                 .filter(r -> roomType.equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Sorry! No available rooms of type: " + roomType));
+                .orElseThrow(() -> new RoomNotAvailableException("Sorry! No available rooms of type: " + roomType));
 
         room.setAvailabilityStatus("OCCUPIED");
         roomRepo.save(room);
@@ -79,7 +81,7 @@ public class CheckInService {
 
     public CheckIn getCheckInByToken(String tokenNumber) {
         return checkInRepo.findByTokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Check-in not found for token: " + tokenNumber));
+                .orElseThrow(() -> new ResourceNotFoundException("Check-in not found for token: " + tokenNumber));
     }
 
     public List<CheckIn> getAllCheckIns() {

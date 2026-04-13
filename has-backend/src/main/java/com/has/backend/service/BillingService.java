@@ -1,6 +1,7 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.*;
+import com.has.backend.exception.ResourceNotFoundException;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -34,7 +35,7 @@ public class BillingService {
 
     public Bill processCheckout(String tokenNumber) {
         CheckIn checkIn = checkInRepo.findByTokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Check-in not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Check-in not found for token: " + tokenNumber));
         checkIn.setActualCheckOutDate(LocalDateTime.now());
         checkInRepo.save(checkIn);
 
@@ -95,7 +96,7 @@ public class BillingService {
     }
 
     public void confirmPayment(Long billId) {
-        Bill bill = billRepo.findById(billId).orElseThrow(() -> new RuntimeException("Bill not found"));
+        Bill bill = billRepo.findById(billId).orElseThrow(() -> new ResourceNotFoundException("Bill not found with ID: " + billId));
         Room room = bill.getCheckIn().getRoom();
         room.setAvailabilityStatus("AVAILABLE");
         roomRepo.save(room);
@@ -103,11 +104,11 @@ public class BillingService {
 
     public Bill getBillById(Long billId) {
         return billRepo.findById(billId)
-                .orElseThrow(() -> new RuntimeException("Bill not found with ID: " + billId));
+                .orElseThrow(() -> new ResourceNotFoundException("Bill not found with ID: " + billId));
     }
 
     public Bill getBillByToken(String tokenNumber) {
         return billRepo.findByCheckIn_TokenNumber(tokenNumber)
-                .orElseThrow(() -> new RuntimeException("Bill not found for token: " + tokenNumber));
+                .orElseThrow(() -> new ResourceNotFoundException("Bill not found for token: " + tokenNumber));
     }
 }

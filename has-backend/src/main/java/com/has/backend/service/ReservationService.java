@@ -1,6 +1,9 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.*;
+import com.has.backend.exception.InvalidRequestException;
+import com.has.backend.exception.ResourceNotFoundException;
+import com.has.backend.exception.RoomNotAvailableException;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -24,13 +27,13 @@ public class ReservationService {
 
     public String makeReservation(Guest guest, String roomType, LocalDateTime startDate, LocalDateTime endDate) {
         if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
-            throw new RuntimeException("endDate must be after startDate");
+            throw new InvalidRequestException("endDate must be after startDate");
         }
 
         // Parse the single-string roomType (e.g. "Single AC" -> occupancyType="Single", acStatus="AC")
         String[] parts = roomType.trim().split("\\s+", 2);
         if (parts.length < 2) {
-            throw new RuntimeException("Invalid roomType format. Expected: '<OccupancyType> <AcStatus>' (e.g. 'Single AC')");
+            throw new InvalidRequestException("Invalid roomType format. Expected: '<OccupancyType> <AcStatus>' (e.g. 'Single AC')");
         }
         String occupancyType = parts[0];
         String acStatus = parts[1];
@@ -41,14 +44,14 @@ public class ReservationService {
                 .toList();
 
         if (candidateRooms.isEmpty()) {
-            throw new RuntimeException("No rooms exist of type: " + roomType);
+            throw new ResourceNotFoundException("No rooms exist of type: " + roomType);
         }
 
         // Find the first room with no overlapping reservations for the requested dates
         Room availableRoom = candidateRooms.stream()
                 .filter(r -> reservationRepo.findOverlappingReservations(r.getRoomId(), startDate, endDate).isEmpty())
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException(
+                .orElseThrow(() -> new RoomNotAvailableException(
                         "Sorry! No available rooms of type '" + roomType + "' for the requested dates"));
 
         guestRepo.save(guest);
