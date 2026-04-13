@@ -1,6 +1,7 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.*;
+import com.has.backend.exception.ResourceNotFoundException;
 import com.has.backend.repository.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -82,7 +83,8 @@ public class OccupancyService {
     }
 
     public void reviseTariff(Long roomId, Double percentage) {
-        Room room = roomRepo.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
         Double oldTariff = room.getCurrentTariff() != null ? room.getCurrentTariff() : room.getBaseTariff();
         Double newTariff = oldTariff + (oldTariff * percentage / 100);
         room.setCurrentTariff(newTariff);

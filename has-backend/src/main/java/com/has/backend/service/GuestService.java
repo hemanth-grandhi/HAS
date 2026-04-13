@@ -1,6 +1,7 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.Guest;
+import com.has.backend.exception.ResourceNotFoundException;
 import com.has.backend.repository.GuestRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -19,12 +20,12 @@ public class GuestService {
 
     public Guest getGuestById(Long guestId) {
         return guestRepo.findById(guestId)
-                .orElseThrow(() -> new RuntimeException("Guest not found with ID: " + guestId));
+                .orElseThrow(() -> new ResourceNotFoundException("Guest not found with ID: " + guestId));
     }
 
     public Guest updateGuest(Long guestId, Guest guestData) {
         Guest guest = guestRepo.findById(guestId)
-                .orElseThrow(() -> new RuntimeException("Guest not found with ID: " + guestId));
+                .orElseThrow(() -> new ResourceNotFoundException("Guest not found with ID: " + guestId));
 
         if (guestData.getName() != null) {
             guest.setName(guestData.getName());
