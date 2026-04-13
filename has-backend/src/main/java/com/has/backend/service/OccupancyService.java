@@ -15,10 +15,14 @@ import java.util.Map;
 public class OccupancyService {
     private final OccupancyRecordRepository occRepo;
     private final RoomRepository roomRepo;
+    private final TariffRevisionPlanRepository tariffPlanRepo;
 
-    public OccupancyService(OccupancyRecordRepository occRepo, RoomRepository roomRepo) {
+    public OccupancyService(OccupancyRecordRepository occRepo,
+                            RoomRepository roomRepo,
+                            TariffRevisionPlanRepository tariffPlanRepo) {
         this.occRepo = occRepo;
         this.roomRepo = roomRepo;
+        this.tariffPlanRepo = tariffPlanRepo;
     }
 
     /**
@@ -26,6 +30,24 @@ public class OccupancyService {
      */
     public List<OccupancyRecord> getOccupancyReport() {
         return occRepo.findAll();
+    }
+
+    public Map<String, Object> getAverageOccupancyForMonth(String month) {
+        List<OccupancyRecord> records = occRepo.findByMonth(month);
+        if (records.isEmpty()) {
+            throw new ResourceNotFoundException("No occupancy records found for month: " + month);
+        }
+
+        double average = records.stream()
+                .mapToDouble(record -> record.getOccupancyRate() != null ? record.getOccupancyRate() : 0.0)
+                .average()
+                .orElse(0.0);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("month", month);
+        result.put("averageOccupancyRate", Math.round(average * 100.0) / 100.0);
+        result.put("recordCount", records.size());
+        return result;
     }
 
     /**
@@ -89,5 +111,46 @@ public class OccupancyService {
         Double newTariff = oldTariff + (oldTariff * percentage / 100);
         room.setCurrentTariff(newTariff);
         roomRepo.save(room);
+    }
+
+    public TariffRevisionPlan scheduleTariffForNextWeek(Long roomId, Double percentage) {
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+        Double oldTariff = room.getCurrentTariff() != null ? room.getCurrentTariff() : room.getBaseTariff();
+        Double revisedTariff = oldTariff + (oldTariff * percentage / 100);
+
+        LocalDate effectiveFrom = LocalDate.now().plusWeeks(1);
+        LocalDate effectiveTo = effectiveFrom.plusDays(6);
+
+        TariffRevisionPlan plan = new TariffRevisionPlan();
+        plan.setRoom(room);
+        plan.setPercentage(percentage);
+        plan.setOriginalTariff(oldTariff);
+        plan.setRevisedTariff(revisedTariff);
+        plan.setEffectiveFrom(effectiveFrom);
+        plan.setEffectiveTo(effectiveTo);
+        plan.setApplied(false);
+
+        return tariffPlanRepo.save(plan);
+    }
+
+    public List<TariffRevisionPlan> getTariffRevisionPlans() {
+        return tariffPlanRepo.findAll();
+    }
+
+    @Scheduled(cron = "0 0 1 * * *")
+    public void applyDueTariffPlans() {
+        LocalDate today = LocalDate.now();
+        List<TariffRevisionPlan> duePlans = tariffPlanRepo.findByAppliedFalseAndEffectiveFromLessThanEqual(today);
+
+        for (TariffRevisionPlan plan : duePlans) {
+            Room room = plan.getRoom();
+            room.setCurrentTariff(plan.getRevisedTariff());
+            roomRepo.save(room);
+
+            plan.setApplied(true);
+            tariffPlanRepo.save(plan);
+        }
     }
 }
