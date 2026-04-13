@@ -3,6 +3,7 @@ package com.has.backend.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,7 +28,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public boolean login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    public boolean login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(request.getUsername(), request.getPassword())
         );

@@ -26,12 +26,7 @@ public class AdminController {
     @PostMapping("/users")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         SystemUser createdUser = service.createUser(request);
-        UserResponse response = new UserResponse();
-        response.setUserId(createdUser.getUserId());
-        response.setName(createdUser.getName());
-        response.setRole(createdUser.getRole());
-        response.setActive(createdUser.isActive());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toUserResponse(createdUser));
     }
 
     @PostMapping("/rooms")
@@ -66,12 +61,23 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<SystemUser>> getAllUsers() {
-        return ResponseEntity.ok(service.getAllUsers());
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(service.getAllUsers().stream()
+                .map(this::toUserResponse)
+                .toList());
     }
 
     @GetMapping("/settings")
     public ResponseEntity<SystemSettings> getSettings() {
         return ResponseEntity.ok(service.getSettings());
+    }
+
+    private UserResponse toUserResponse(SystemUser user) {
+        UserResponse response = new UserResponse();
+        response.setUserId(user.getUserId());
+        response.setName(user.getName());
+        response.setRole(user.getRole());
+        response.setActive(user.isActive());
+        return response;
     }
 }

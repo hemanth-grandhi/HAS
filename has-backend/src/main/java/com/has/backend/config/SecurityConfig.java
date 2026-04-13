@@ -57,7 +57,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder) {
+                                                         PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
@@ -71,24 +71,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        BCryptPasswordEncoder delegate = new BCryptPasswordEncoder();
-        return new PasswordEncoder() {
-            @Override
-            public String encode(CharSequence rawPassword) {
-                return delegate.encode(rawPassword);
-            }
-
-            @Override
-            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                if (encodedPassword == null) {
-                    return false;
-                }
-                if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
-                    return delegate.matches(rawPassword, encodedPassword);
-                }
-                return encodedPassword.contentEquals(rawPassword);
-            }
-        };
+        return new BCryptPasswordEncoder();
     }
 
     private String normalizeRole(String role) {

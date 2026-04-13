@@ -111,7 +111,7 @@ public class AdminService {
         if (role == null) {
             throw new InvalidRequestException("User role is required");
         }
-
+        String normalizedRole = normalizeRole(role);
         SystemUser concreteUser = switch (role.trim().toLowerCase()) {
             case "administrator" -> new Administrator();
             case "hotelmanager", "hotel manager" -> new HotelManager();
