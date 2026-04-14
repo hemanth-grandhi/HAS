@@ -14,6 +14,7 @@ public class OccupancyRecord {
     private Room room;
 
     private Double occupancyRate;
+    @Column(name = "occupancy_month")
     private String month;
     private Double revisedTariff;
 

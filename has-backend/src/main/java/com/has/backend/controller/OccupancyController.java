@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/occupancy")
-@PreAuthorize("hasRole('HOTEL_MANAGER')")
+@PreAuthorize("hasAnyRole('HOTEL_MANAGER', 'ADMINISTRATOR')")
 public class OccupancyController {
     private final OccupancyService service;
 
