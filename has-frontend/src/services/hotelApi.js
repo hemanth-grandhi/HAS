@@ -1294,9 +1294,31 @@ export const mockHotelApi = {
 const useBackend =
   String(import.meta.env.VITE_USE_BACKEND ?? 'true').toLowerCase() !== 'false'
 
-const backendUsername = import.meta.env.VITE_BACKEND_USERNAME || 'admin'
-const backendPassword = import.meta.env.VITE_BACKEND_PASSWORD || 'admin123'
 let sessionReadyPromise = null
+
+function normalizeDigits(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function toIso(value) {
+  return value ? new Date(value).toISOString() : null
+}
+
+function sameOrBefore(left, right) {
+  return new Date(left).getTime() <= new Date(right).getTime()
+}
+
+function overlaps(startA, endA, startB, endB) {
+  const aStart = new Date(startA).getTime()
+  const aEnd = new Date(endA).getTime()
+  const bStart = new Date(startB).getTime()
+  const bEnd = new Date(endB).getTime()
+  return aStart < bEnd && bStart < aEnd
+}
+
+function roomNumberFromId(roomId) {
+  return String(100 + Number(roomId || 0))
+}
 
 function parseRoomType(room) {
   const occupancy = room?.occupancyType || 'Single'
@@ -1335,16 +1357,17 @@ function maybeBackendFailure(response) {
 }
 
 async function ensureBackendSession() {
-  if (!useBackend) return false
+  if (!useBackend) {
+    throw new Error('Strict backend mode requires VITE_USE_BACKEND=true')
+  }
   if (sessionReadyPromise) return sessionReadyPromise
 
   sessionReadyPromise = (async () => {
-    const me = maybeBackendFailure(await api.get('/auth/me'))
-    if (me.status === 200 && me.data?.authenticated) return true
-    const login = maybeBackendFailure(
-      await api.post('/auth/login', { username: backendUsername, password: backendPassword }),
-    )
-    return login.status >= 200 && login.status < 300
+    const me = await api.get('/auth/me')
+    if (me.status === 200 && me.data?.authenticated) {
+      return true
+    }
+    throw new Error('Not authenticated')
   })()
 
   try {
@@ -1355,48 +1378,97 @@ async function ensureBackendSession() {
   }
 }
 
-async function withFallback(backendCall, mockCall) {
-  if (!useBackend) {
-    return mockCall()
-  }
+async function withBackend(backendCall) {
+  await ensureBackendSession()
+  return backendCall()
+}
 
-  try {
-    await ensureBackendSession()
-    return await backendCall()
-  } catch (error) {
-    console.warn('[HMS Bridge] Falling back to mock data:', error?.message || error)
-    return mockCall()
-  }
+async function fetchReservationsRaw() {
+  const response = maybeBackendFailure(await api.get('/reservations'))
+  return response.data || []
+}
+
+async function fetchCheckInsRaw() {
+  const response = maybeBackendFailure(await api.get('/checkins'))
+  return response.data || []
 }
 
 export const hotelApi = {
   async listRooms() {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.get('/admin/rooms'))
-      return (response.data || []).map((room, index) => toFrontendRoom(room, index))
-    }, () => mockHotelApi.listRooms())
+      const rooms = (response.data || []).map((room, index) => toFrontendRoom(room, index))
+      const checkIns = await fetchCheckInsRaw()
+      const reservations = await fetchReservationsRaw()
+
+      return rooms.map((room) => {
+        const activeStay = checkIns.find(
+          (item) => item?.room?.roomId === room.id && !item.actualCheckOutDate,
+        )
+        const reserved = reservations.find((item) => item?.room?.roomId === room.id)
+        return {
+          ...room,
+          number: roomNumberFromId(room.id),
+          status: activeStay ? 'OCCUPIED' : room.status,
+          currentGuestName: activeStay?.guest?.name || '',
+          activeToken: activeStay?.tokenNumber || '',
+          nextReservationDate: reserved?.startDate || '',
+        }
+      })
+    })
   },
 
   async listCheckIns() {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.get('/checkins'))
       return response.data || []
-    }, () => mockHotelApi.listCheckIns())
+    })
   },
 
   async listGuests() {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.get('/guests'))
-      return response.data || []
-    }, () => mockHotelApi.listGuests())
+      return (response.data || []).map((guest) => ({
+        ...guest,
+        stayCount: guest?.stayCount ?? 0,
+      }))
+    })
   },
 
   async listFrequentGuests() {
-    return mockHotelApi.listFrequentGuests()
+    return withBackend(async () => {
+      const guests = await this.listGuests()
+      const results = await Promise.all(
+        guests.map(async (guest) => {
+          try {
+            const response = await api.get(`/frequent-guests/${guest.guestId}`)
+            const item = response?.data
+            if (!item) return null
+            const tier = item.discountTier || 'SILVER'
+            const discountPct = tier === 'PLATINUM' ? 15 : tier === 'GOLD' ? 10 : 5
+            return {
+              id: item.frequentGuestId,
+              frequentGuestId: item.frequentGuestId,
+              guestId: guest.guestId,
+              name: guest.name,
+              contact: guest.contactNumber,
+              tier,
+              discountPct,
+              rewardPoints: item.rewardPoints || 0,
+              stayCount: guest.stayCount || 0,
+              lastVisitedOn: guest.expectedCheckOutDate,
+            }
+          } catch {
+            return null
+          }
+        }),
+      )
+      return results.filter(Boolean)
+    })
   },
 
   async createReservation(payload) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.post('/reservations', payload))
       return {
         tokenNumber: `RES-${Date.now().toString().slice(-4)}`,
@@ -1405,75 +1477,150 @@ export const hotelApi = {
             ? response.data
             : 'Reservation created successfully.',
       }
-    }, () => mockHotelApi.createReservation(payload))
+    })
   },
 
   async createWalkInCheckIn(payload) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.post('/checkins', payload))
       return response.data || {}
-    }, () => mockHotelApi.createWalkInCheckIn(payload))
+    })
   },
 
   async createCheckInFromReservation(payload) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.post('/checkins/from-reservation', payload))
       return response.data || {}
-    }, () => mockHotelApi.createCheckInFromReservation(payload))
+    })
   },
 
   async lookupReservations(params) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(
         await api.get('/reservations/lookup', { params }),
       )
-      return response.data || []
-    }, () => mockHotelApi.lookupReservations(params))
+      return (response.data || []).map((item) => ({
+        ...item,
+        roomType: item?.roomType || parseRoomType(item?.room),
+      }))
+    })
   },
 
   async updateGuest(guestId, payload) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.put(`/guests/${guestId}`, payload))
       return response.data || {}
-    }, () => mockHotelApi.updateGuest(guestId, payload))
+    })
   },
 
   async registerFrequentGuest(guestId, tier = 'SILVER') {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(
         await api.post(`/frequent-guests/register/${guestId}`, { tier }),
       )
       return response.data || {}
-    }, () => mockHotelApi.registerFrequentGuest(guestId, tier))
+    })
   },
 
   async checkAvailability(checkInDate, checkOutDate, roomType) {
-    return withFallback(
-      () => mockHotelApi.checkAvailability(checkInDate, checkOutDate, roomType),
-      () => mockHotelApi.checkAvailability(checkInDate, checkOutDate, roomType),
-    )
+    return withBackend(async () => {
+      const [rooms, reservations, checkIns] = await Promise.all([
+        this.listRooms(),
+        fetchReservationsRaw(),
+        fetchCheckInsRaw(),
+      ])
+      const allRooms = rooms.filter((room) => !roomType || room.roomType === roomType)
+      const available = allRooms.filter((room) => {
+        const roomId = room.id
+        const overlappingReservation = reservations.some(
+          (reservation) =>
+            reservation?.room?.roomId === roomId &&
+            overlaps(checkInDate, checkOutDate, reservation.startDate, reservation.endDate),
+        )
+        const overlappingCheckIn = checkIns.some(
+          (checkIn) =>
+            checkIn?.room?.roomId === roomId &&
+            !checkIn.actualCheckOutDate &&
+            overlaps(checkInDate, checkOutDate, checkIn.checkInDate, checkIn.expectedCheckOutDate),
+        )
+        return !overlappingReservation && !overlappingCheckIn
+      })
+      return {
+        totalAvailable: available.length,
+        byType: available.reduce((grouped, room) => {
+          grouped[room.roomType] = grouped[room.roomType]
+            ? [...grouped[room.roomType], room]
+            : [room]
+          return grouped
+        }, {}),
+        allRooms: available,
+      }
+    })
   },
 
   async getDashboardSummary() {
-    return withFallback(() => mockHotelApi.getDashboardSummary(), () => mockHotelApi.getDashboardSummary())
+    return withBackend(async () => {
+      const [rooms, guests, reservations, checkIns] = await Promise.all([
+        this.listRooms(),
+        this.listGuests(),
+        fetchReservationsRaw(),
+        fetchCheckInsRaw(),
+      ])
+      const activeCheckIns = checkIns.filter((item) => !item.actualCheckOutDate)
+      return {
+        totalRooms: rooms.length,
+        occupiedRooms: activeCheckIns.length,
+        availableRooms: rooms.length - activeCheckIns.length,
+        activeReservationsCount: reservations.length,
+        frequentGuestsCount: (await this.listFrequentGuests()).length,
+        guestHistoryCount: guests.length,
+        occupiedRoomNumbers: activeCheckIns
+          .map((item) => roomNumberFromId(item?.room?.roomId))
+          .filter(Boolean),
+        recentGuests: guests.slice(0, 4),
+      }
+    })
   },
 
   async getOccupancyTrend({ days = 14 } = {}) {
-    return withFallback(
-      () => mockHotelApi.getOccupancyTrend({ days }),
-      () => mockHotelApi.getOccupancyTrend({ days }),
-    )
+    return withBackend(async () => {
+      const report = maybeBackendFailure(await api.get('/occupancy/realtime'))
+      const totalRooms = Number(report?.data?.totalRooms || 0)
+      const occupiedRooms = Number(report?.data?.occupiedRooms || 0)
+      const occupancyPct = totalRooms ? Math.round((occupiedRooms * 10000) / totalRooms) / 100 : 0
+      const today = new Date()
+      const points = Array.from({ length: days }, (_, idx) => {
+        const day = new Date(today)
+        day.setDate(today.getDate() - (days - idx - 1))
+        return {
+          dayISO: day.toISOString().slice(0, 10),
+          dateLabel: day.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+          occupiedRooms,
+          occupancyPct,
+        }
+      })
+      return { totalRooms, averageOccupancyPct: occupancyPct, points }
+    })
   },
 
   async listActiveReservations() {
-    return withFallback(
-      () => mockHotelApi.listActiveReservations(),
-      () => mockHotelApi.listActiveReservations(),
-    )
+    return withBackend(async () => {
+      const checkIns = await fetchCheckInsRaw()
+      return checkIns
+        .filter((item) => !item.actualCheckOutDate)
+        .map((item) => ({
+          token: item.tokenNumber,
+          roomNumber: roomNumberFromId(item?.room?.roomId),
+          guestName: item?.guest?.name || 'Guest',
+          roomType: parseRoomType(item?.room),
+          checkInDate: toIso(item.checkInDate),
+          expectedCheckOutDate: toIso(item.expectedCheckOutDate),
+        }))
+    })
   },
 
   async listCateringForToken(token) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.get(`/catering/${token}`))
       const entries = response.data || []
       return entries.map((item) => ({
@@ -1488,11 +1635,11 @@ export const hotelApi = {
           },
         ],
       }))
-    }, () => mockHotelApi.listCateringForToken(token))
+    })
   },
 
   async addCateringItem({ token, items = [] }) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const firstItem = items[0]
       if (!firstItem) return {}
       const payload = {
@@ -1503,24 +1650,62 @@ export const hotelApi = {
       }
       const response = maybeBackendFailure(await api.post('/catering/log', payload))
       return response.data || {}
-    }, () => mockHotelApi.addCateringItem({ token, items }))
+    })
   },
 
   async getBillingPreview({ token, extraDiscountType = 'none', extraDiscountValue = 0 }) {
-    return withFallback(
-      () => mockHotelApi.getBillingPreview({ token, extraDiscountType, extraDiscountValue }),
-      () => mockHotelApi.getBillingPreview({ token, extraDiscountType, extraDiscountValue }),
-    )
+    return withBackend(async () => {
+      const [checkInResponse, cateringEntries] = await Promise.all([
+        maybeBackendFailure(await api.get(`/checkins/${token}`)),
+        this.listCateringForToken(token),
+      ])
+      const checkIn = checkInResponse.data
+      const room = checkIn?.room || {}
+      const guest = checkIn?.guest || {}
+      const roomTariff = Number(room.currentTariff ?? room.baseTariff ?? 0)
+      const stayStart = checkIn?.checkInDate || new Date().toISOString()
+      const roomCharges = Math.max(
+        roomTariff,
+        Math.ceil((Date.now() - new Date(stayStart).getTime()) / (24 * 60 * 60 * 1000)) * roomTariff,
+      )
+      const cateringCharges = cateringEntries.reduce((sum, entry) => sum + Number(entry.orderTotal || 0), 0)
+      const subtotal = roomCharges + cateringCharges
+      let extraDiscountAmount = 0
+      if (extraDiscountType === 'amount') {
+        extraDiscountAmount = Math.max(0, Number(extraDiscountValue || 0))
+      } else if (extraDiscountType === 'percent') {
+        extraDiscountAmount = (subtotal * Math.max(0, Number(extraDiscountValue || 0))) / 100
+      }
+      const advancePayment = Number(checkIn?.advancePayment || 0)
+      const totalPayable = Math.max(0, subtotal - extraDiscountAmount - advancePayment)
+      return {
+        token,
+        createdAtISO: new Date().toISOString(),
+        guestName: guest?.name || 'Guest',
+        contact: normalizeDigits(guest?.contactNumber || ''),
+        frequentGuestTier: null,
+        roomNumber: roomNumberFromId(room?.roomId),
+        roomType: parseRoomType(room),
+        bedType: room?.occupancyType || '',
+        roomCharges,
+        cateringCharges,
+        baseDiscountAmount: 0,
+        extraDiscountAmount,
+        totalDiscountAmount: extraDiscountAmount,
+        totalPayable,
+        cateringEntries,
+      }
+    })
   },
 
   async checkout({ token }) {
-    return withFallback(async () => {
+    return withBackend(async () => {
       const response = maybeBackendFailure(await api.post(`/billing/checkout/${token}`))
       return response.data || {}
-    }, () => mockHotelApi.checkout({ token }))
+    })
   },
 
   async resetMockData() {
-    return mockHotelApi.resetMockData()
+    throw new Error('Mock reset is disabled in strict backend mode')
   },
 }

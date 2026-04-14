@@ -8,6 +8,7 @@ import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class ReservationService {
@@ -82,7 +83,16 @@ public class ReservationService {
      * Used by the receptionist at check-in to find a guest's reservation.
      */
     public List<Reservation> findReservationsByGuestDetails(String name, String contactNumber) {
-        return reservationRepo.findByGuest_NameAndGuest_ContactNumber(name, contactNumber);
+        String normalizedName = normalizeName(name);
+        String normalizedContact = normalizeContact(contactNumber);
+
+        return reservationRepo.findAll().stream()
+                .filter(reservation -> reservation.getGuest() != null)
+                .filter(reservation -> normalizeName(reservation.getGuest().getName()).contains(normalizedName))
+                .filter(reservation -> contactsMatch(
+                        normalizeContact(reservation.getGuest().getContactNumber()),
+                        normalizedContact))
+                .toList();
     }
 
     public void cancelReservation(Long reservationId) {
@@ -90,5 +100,35 @@ public class ReservationService {
                 .orElseThrow(() -> new RuntimeException("Reservation not found for ID: " + reservationId));
 
         reservationRepo.delete(reservation);
+    }
+
+    private String normalizeName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim()
+                .replaceAll("\\s+", " ")
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeContact(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replaceAll("\\D", "");
+    }
+
+    private boolean contactsMatch(String storedContact, String searchContact) {
+        if (storedContact.isEmpty() || searchContact.isEmpty()) {
+            return false;
+        }
+        if (storedContact.equals(searchContact)) {
+            return true;
+        }
+        // Allow lookup with/without country code (e.g., +91XXXXXXXXXX vs XXXXXXXXXX).
+        if (storedContact.length() >= 7 && searchContact.length() >= 7) {
+            return storedContact.endsWith(searchContact) || searchContact.endsWith(storedContact);
+        }
+        return false;
     }
 }
