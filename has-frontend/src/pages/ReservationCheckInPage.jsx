@@ -457,7 +457,7 @@ export default function ReservationCheckInPage() {
               disabled={submitting || !availableRooms || availableRooms.totalAvailable === 0}
               className="w-full bg-slate-700 hover:bg-slate-800 text-white"
             >
-              {submitting ? 'Processing...' : 'Walk-in Check-in'}
+              {submitting ? 'Processing...' : 'Direct Check-In'}
             </Button>
           </div>
         </Card>
@@ -533,7 +533,7 @@ export default function ReservationCheckInPage() {
         <Card className="p-6 bg-indigo-50 border-indigo-200">
           <div className="text-sm font-semibold text-slate-900">Check-in Completed</div>
           <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-            Token: <span className="font-semibold text-indigo-700">{checkInToken}</span>
+            Check-In Token: <span className="font-semibold text-indigo-700">{checkInToken}</span>
           </div>
         </Card>
       ) : null}

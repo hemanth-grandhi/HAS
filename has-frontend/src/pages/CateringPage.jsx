@@ -136,7 +136,7 @@ export default function CateringPage() {
     <div className="space-y-4">
       <PageHeader
         title="Catering Services"
-        subtitle="Log food items consumed and associate entries with the guest token number."
+        subtitle="Log food items consumed and associate entries with the active check-in token."
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -145,12 +145,12 @@ export default function CateringPage() {
 
           <div className="mt-4 space-y-4">
             <Select
-              label="Guest Token"
+              label="Check-In Token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               error={errors.token}
               options={[
-                { value: '', label: 'Select token...' },
+                { value: '', label: 'Select check-in token...' },
                 ...tokenOptions,
               ]}
             />
@@ -189,7 +189,7 @@ export default function CateringPage() {
             />
 
             <Button onClick={submit} disabled={loading} type="button" className="w-full">
-              Add to Token
+              Add to Check-In
             </Button>
           </div>
         </Card>
@@ -202,7 +202,7 @@ export default function CateringPage() {
                   Ordered Items
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
-                  Token: <span className="font-semibold text-slate-700">{token || '--'}</span>
+                  Check-In Token: <span className="font-semibold text-slate-700">{token || '--'}</span>
                 </div>
               </div>
               <Button
@@ -218,7 +218,7 @@ export default function CateringPage() {
             <div className="mt-4 space-y-3">
               {!token ? (
                 <div className="text-sm text-slate-500">
-                  Select an active reservation token to view orders.
+                  Select an active check-in token to view orders.
                 </div>
               ) : entries.length ? (
                 entries.map((e) => (
@@ -248,7 +248,7 @@ export default function CateringPage() {
                 ))
               ) : (
                 <div className="text-sm text-slate-500">
-                  No catering items logged for this token yet.
+                  No catering items logged for this check-in token yet.
                 </div>
               )}
             </div>

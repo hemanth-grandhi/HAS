@@ -1,7 +1,7 @@
 spring.application.name=has-backend
 
 # PostgreSQL Database Configuration
-spring.datasource.url=jdbc:postgresql://localhost:5432/has_db
+spring.datasource.url=jdbc:postgresql://localhost:5432/hotel_db
 spring.datasource.username=your_db_user
 spring.datasource.password=your_db_password
 spring.datasource.driver-class-name=org.postgresql.Driver
@@ -19,3 +19,9 @@ server.port=8080
 app.cors.allowed-origin=http://localhost:5173
 app.bootstrap.admin.username=admin
 app.bootstrap.admin.password=admin123
+app.bootstrap.receptionist.username=reception
+app.bootstrap.receptionist.password=reception123
+app.bootstrap.catering.username=catering
+app.bootstrap.catering.password=catering123
+app.bootstrap.manager.username=manager
+app.bootstrap.manager.password=manager123

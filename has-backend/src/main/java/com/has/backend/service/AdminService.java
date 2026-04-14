@@ -27,6 +27,24 @@ public class AdminService {
     @Value("${app.bootstrap.admin.password:admin123}")
     private String bootstrapAdminPassword;
 
+    @Value("${app.bootstrap.receptionist.username:reception}")
+    private String bootstrapReceptionistUsername;
+
+    @Value("${app.bootstrap.receptionist.password:reception123}")
+    private String bootstrapReceptionistPassword;
+
+    @Value("${app.bootstrap.catering.username:catering}")
+    private String bootstrapCateringUsername;
+
+    @Value("${app.bootstrap.catering.password:catering123}")
+    private String bootstrapCateringPassword;
+
+    @Value("${app.bootstrap.manager.username:manager}")
+    private String bootstrapManagerUsername;
+
+    @Value("${app.bootstrap.manager.password:manager123}")
+    private String bootstrapManagerPassword;
+
     public AdminService(
             SystemUserRepository userRepo,
             RoomRepository roomRepo,
@@ -112,7 +130,7 @@ public class AdminService {
         if (settingsRepo.findFirstByOrderBySettingIdAsc().isEmpty()) {
             settingsRepo.save(createDefaultSettings(SETTINGS_ID));
         }
-        initializeDefaultAdmin();
+        initializeDefaultUsers();
         initializeDefaultRooms();
     }
 
@@ -163,17 +181,23 @@ public class AdminService {
         };
     }
 
-    private void initializeDefaultAdmin() {
-        if (userRepo.findByName(bootstrapAdminUsername).isPresent()) {
+    private void initializeDefaultUsers() {
+        createUserIfMissing(new Administrator(), bootstrapAdminUsername, DEFAULT_ADMIN_ROLE, bootstrapAdminPassword);
+        createUserIfMissing(new Receptionist(), bootstrapReceptionistUsername, "RECEPTIONIST", bootstrapReceptionistPassword);
+        createUserIfMissing(new CateringManager(), bootstrapCateringUsername, "CATERING_MANAGER", bootstrapCateringPassword);
+        createUserIfMissing(new HotelManager(), bootstrapManagerUsername, "HOTEL_MANAGER", bootstrapManagerPassword);
+    }
+
+    private void createUserIfMissing(SystemUser user, String username, String role, String password) {
+        if (userRepo.findByName(username).isPresent()) {
             return;
         }
 
-        Administrator admin = new Administrator();
-        admin.setName(bootstrapAdminUsername);
-        admin.setRole(DEFAULT_ADMIN_ROLE);
-        admin.setCredentials(passwordEncoder.encode(bootstrapAdminPassword));
-        admin.setActive(true);
-        userRepo.save(admin);
+        user.setName(username);
+        user.setRole(role);
+        user.setCredentials(passwordEncoder.encode(password));
+        user.setActive(true);
+        userRepo.save(user);
     }
 
     private void initializeDefaultRooms() {

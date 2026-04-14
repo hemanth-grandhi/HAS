@@ -101,7 +101,7 @@ export default function BillingCheckoutPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Billing & Check-out"
+        title="Billing & Checkout"
         subtitle="Generate an invoice with room charges, catering charges, and discounts."
       />
 
@@ -110,15 +110,15 @@ export default function BillingCheckoutPage() {
           <div className="text-sm font-semibold text-slate-900">Invoice Inputs</div>
           <div className="mt-4 space-y-4">
             <Select
-              label="Active Reservation Token"
+              label="Check-In Token"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               options={
                 tokenOptions.length
                   ? tokenOptions
-                  : [{ value: '', label: 'No active reservations' }]
+                  : [{ value: '', label: 'No active check-ins' }]
               }
-              hint={activeReservations.length ? '' : 'No active reservations right now.'}
+              hint={activeReservations.length ? '' : 'No active check-ins right now.'}
               disabled={activeReservations.length === 0}
             />
 
@@ -170,7 +170,7 @@ export default function BillingCheckoutPage() {
                 <div>
                   <div className="text-sm font-semibold text-slate-900">INVOICE</div>
                   <div className="text-xs text-slate-500">
-                    Token: <span className="font-semibold text-slate-800">{preview.token}</span>
+                    Check-In Token: <span className="font-semibold text-slate-800">{preview.token}</span>
                   </div>
                 </div>
                 <div className="text-xs text-slate-500">
@@ -285,7 +285,7 @@ export default function BillingCheckoutPage() {
                   </div>
                 ) : (
                   <div className="mt-2 text-sm text-slate-500">
-                    No catering items for this token.
+                    No catering items for this check-in token.
                   </div>
                 )}
               </div>
@@ -294,7 +294,7 @@ export default function BillingCheckoutPage() {
             <Card className="p-4">
               <div className="text-sm font-semibold text-slate-900">Invoice Preview</div>
               <div className="mt-2 text-sm text-slate-600">
-                Select a token and click <span className="font-semibold">Generate Invoice</span>.
+                Select a check-in token and click <span className="font-semibold">Generate Invoice</span>.
               </div>
             </Card>
           )}

@@ -40,5 +40,6 @@ Frontend URL: `http://localhost:5173`
 
 ## Notes
 
-- Frontend is backend-first and gracefully falls back to mock behavior for any unmapped data flow, so screens stay stable during a live demo.
-- For strict backend-only evaluation later, remove fallback behavior after API contract alignment.
+- Frontend is in strict backend-only mode.
+- In `demo` profile, the app uses in-memory H2, so data resets whenever the backend restarts.
+- For persistent data, run with PostgreSQL configuration (non-demo profile).
