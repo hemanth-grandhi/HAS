@@ -20,6 +20,7 @@ import CateringPage from './pages/CateringPage.jsx'
 import BillingCheckoutPage from './pages/BillingCheckoutPage.jsx'
 import FrequentGuestsPage from './pages/FrequentGuestsPage.jsx'
 import OccupancyAnalysisPage from './pages/OccupancyAnalysisPage.jsx'
+import TariffRevisionPage from './pages/TariffRevisionPage.jsx'
 import { api } from './services/api.js'
 
 function LoginPage({ onLoginSuccess }) {
@@ -90,6 +91,7 @@ function StaffShell({ session, onLogout }) {
       { to: '/catering', label: 'Catering Services' },
       { to: '/billing', label: 'Billing & Checkout' },
       { to: '/guests', label: 'Guests' },
+      { to: '/tariff', label: 'Tariff Revision' },
       { to: '/occupancy', label: 'Occupancy Analysis' },
     ],
     [],
@@ -199,6 +201,7 @@ export default function App() {
               <Route path="catering" element={<CateringPage />} />
               <Route path="billing" element={<BillingCheckoutPage />} />
               <Route path="guests" element={<FrequentGuestsPage />} />
+              <Route path="tariff" element={<TariffRevisionPage />} />
               <Route path="occupancy" element={<OccupancyAnalysisPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
