@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/catering")
-@PreAuthorize("hasRole('CATERING_MANAGER')")
+@PreAuthorize("hasAnyRole('CATERING_MANAGER', 'ADMINISTRATOR')")
 public class CateringController {
     private final CateringService service;
 

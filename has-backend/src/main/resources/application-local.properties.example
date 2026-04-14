@@ -14,3 +14,8 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 # Spring Web Configuration
 server.port=8080
+
+# Frontend integration defaults
+app.cors.allowed-origin=http://localhost:5173
+app.bootstrap.admin.username=admin
+app.bootstrap.admin.password=admin123

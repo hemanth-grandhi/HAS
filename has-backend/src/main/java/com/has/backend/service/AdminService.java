@@ -6,6 +6,7 @@ import com.has.backend.exception.InvalidRequestException;
 import com.has.backend.exception.ResourceNotFoundException;
 import com.has.backend.repository.*;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -13,11 +14,18 @@ import java.util.List;
 @Service
 public class AdminService {
     private static final long SETTINGS_ID = 1L;
+    private static final String DEFAULT_ADMIN_ROLE = "ADMINISTRATOR";
 
     private final SystemUserRepository userRepo;
     private final RoomRepository roomRepo;
     private final SystemSettingsRepository settingsRepo;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.bootstrap.admin.username:admin}")
+    private String bootstrapAdminUsername;
+
+    @Value("${app.bootstrap.admin.password:admin123}")
+    private String bootstrapAdminPassword;
 
     public AdminService(
             SystemUserRepository userRepo,
@@ -100,10 +108,12 @@ public class AdminService {
     }
 
     @PostConstruct
-    public void initializeSettings() {
+    public void initializeDefaults() {
         if (settingsRepo.findFirstByOrderBySettingIdAsc().isEmpty()) {
             settingsRepo.save(createDefaultSettings(SETTINGS_ID));
         }
+        initializeDefaultAdmin();
+        initializeDefaultRooms();
     }
 
     private SystemUser toConcreteUser(SystemUser user) {
@@ -151,5 +161,41 @@ public class AdminService {
             case "CATERINGMANAGER" -> "CATERING_MANAGER";
             default -> normalized;
         };
+    }
+
+    private void initializeDefaultAdmin() {
+        if (userRepo.findByName(bootstrapAdminUsername).isPresent()) {
+            return;
+        }
+
+        Administrator admin = new Administrator();
+        admin.setName(bootstrapAdminUsername);
+        admin.setRole(DEFAULT_ADMIN_ROLE);
+        admin.setCredentials(passwordEncoder.encode(bootstrapAdminPassword));
+        admin.setActive(true);
+        userRepo.save(admin);
+    }
+
+    private void initializeDefaultRooms() {
+        if (roomRepo.count() > 0) {
+            return;
+        }
+
+        roomRepo.save(createRoom("Single", "Non-AC", 2800.0));
+        roomRepo.save(createRoom("Single", "AC", 3400.0));
+        roomRepo.save(createRoom("Double", "Non-AC", 4300.0));
+        roomRepo.save(createRoom("Double", "AC", 4900.0));
+        roomRepo.save(createRoom("Deluxe", "AC", 6500.0));
+        roomRepo.save(createRoom("Suite", "AC", 10800.0));
+    }
+
+    private Room createRoom(String occupancyType, String acStatus, Double tariff) {
+        Room room = new Room();
+        room.setOccupancyType(occupancyType);
+        room.setAcStatus(acStatus);
+        room.setBaseTariff(tariff);
+        room.setCurrentTariff(tariff);
+        room.setAvailabilityStatus("AVAILABLE");
+        return room;
     }
 }
