@@ -1603,6 +1603,35 @@ export const hotelApi = {
     })
   },
 
+  async reviseTariffNow({ roomId, percentage }) {
+    return withBackend(async () => {
+      await maybeBackendFailure(
+        await api.put(`/occupancy/tariff/${roomId}`, {
+          percentage: Number(percentage),
+        }),
+      )
+      return { success: true }
+    })
+  },
+
+  async scheduleTariffRevision({ roomId, percentage }) {
+    return withBackend(async () => {
+      const response = maybeBackendFailure(
+        await api.post(`/occupancy/tariff/${roomId}/schedule-next-week`, {
+          percentage: Number(percentage),
+        }),
+      )
+      return response.data || {}
+    })
+  },
+
+  async listTariffRevisionPlans() {
+    return withBackend(async () => {
+      const response = maybeBackendFailure(await api.get('/occupancy/tariff/plans'))
+      return response.data || []
+    })
+  },
+
   async listActiveReservations() {
     return withBackend(async () => {
       const checkIns = await fetchCheckInsRaw()
