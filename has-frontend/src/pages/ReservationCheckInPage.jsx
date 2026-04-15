@@ -393,7 +393,11 @@ export default function ReservationCheckInPage() {
             <Input
               label="Guest Name"
               value={reservationForm.guestName}
-              onChange={(e) => setReservationForm((f) => ({ ...f, guestName: e.target.value }))}
+              onChange={(e) => {
+                const value = e.target.value
+                setReservationForm((f) => ({ ...f, guestName: value }))
+                setWalkInForm((f) => ({ ...f, guestName: value }))
+              }}
               error={errors.guestName}
             />
 
@@ -402,7 +406,11 @@ export default function ReservationCheckInPage() {
               <div className="flex gap-2">
                 <Select
                   value={reservationForm.country}
-                  onChange={(e) => setReservationForm((f) => ({ ...f, country: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setReservationForm((f) => ({ ...f, country: value }))
+                    setWalkInForm((f) => ({ ...f, country: value }))
+                  }}
                   options={[
                     { value: 'IN', label: '🇮🇳 +91' },
                     { value: 'US', label: '🇺🇸 +1' },
@@ -414,7 +422,11 @@ export default function ReservationCheckInPage() {
                 <input
                   type="tel"
                   value={reservationForm.contact}
-                  onChange={(e) => setReservationForm((f) => ({ ...f, contact: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setReservationForm((f) => ({ ...f, contact: value }))
+                    setWalkInForm((f) => ({ ...f, contact: value }))
+                  }}
                   placeholder={`${getCountryCodePrefix(reservationForm.country)} 1234567890`}
                   className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                     errors.contact ? 'border-rose-500' : 'border-slate-300 focus:border-indigo-500'

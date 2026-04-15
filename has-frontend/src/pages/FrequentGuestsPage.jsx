@@ -26,30 +26,13 @@ function formatDate(value) {
   }
 }
 
-function normalizeName(value) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-}
-
-function normalizeContact(value) {
-  return String(value || '').replace(/\D/g, '')
-}
-
-function contactsMatch(left, right) {
-  if (!left || !right) return false
-  if (left === right) return true
-  return left.endsWith(right) || right.endsWith(left)
-}
-
 export default function FrequentGuestsPage() {
   const toast = useToast()
   const [loading, setLoading] = useState(true)
   const [guests, setGuests] = useState([])
   const [frequentGuests, setFrequentGuests] = useState([])
   const [guestUpdateForm, setGuestUpdateForm] = useState({ guestId: '', name: '', contact: '' })
-  const [form, setForm] = useState({ name: '', contact: '', tier: 'SILVER' })
+  const [form, setForm] = useState({ guestId: '', tier: 'SILVER' })
   const [errors, setErrors] = useState({})
 
   async function load() {
@@ -79,8 +62,7 @@ export default function FrequentGuestsPage() {
 
   function validateRegistration() {
     const next = {}
-    if (!form.name.trim()) next.name = 'Name is required'
-    if (!form.contact.trim()) next.contact = 'Contact is required'
+    if (!form.guestId) next.guestId = 'Please select a guest'
     return next
   }
 
@@ -98,24 +80,13 @@ export default function FrequentGuestsPage() {
     if (Object.keys(nextErrors).length) return
 
     try {
-      const allGuests = await hotelApi.listGuests()
-      const formName = normalizeName(form.name)
-      const formContact = normalizeContact(form.contact)
-      const guestMatch = allGuests.find(
-        (g) =>
-          normalizeName(g.name) === formName &&
-          contactsMatch(normalizeContact(g.contactNumber), formContact),
-      )
-      if (!guestMatch) {
-        throw new Error('Guest not found. Please create a reservation or check-in for this guest first.')
-      }
-      const created = await hotelApi.registerFrequentGuest(guestMatch.guestId, form.tier)
+      const created = await hotelApi.registerFrequentGuest(Number(form.guestId), form.tier)
       toast.pushToast({
         type: 'success',
         title: 'Frequent Guest Registered',
         message: `Generated ID: ${created.frequentGuestId}`,
       })
-      setForm({ name: '', contact: '', tier: 'SILVER' })
+      setForm({ guestId: '', tier: 'SILVER' })
       await load()
     } catch (e) {
       toast.pushToast({
@@ -162,6 +133,14 @@ export default function FrequentGuestsPage() {
     setErrors({})
   }
 
+  const registeredGuestIds = new Set(frequentGuests.map((g) => Number(g.guestId)))
+  const guestOptions = guests
+    .filter((guest) => !registeredGuestIds.has(Number(guest.guestId)))
+    .map((guest) => ({
+      value: String(guest.guestId),
+      label: `${guest.guestId} • ${guest.name} • ${guest.contactNumber}`,
+    }))
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -174,18 +153,21 @@ export default function FrequentGuestsPage() {
           <div className="text-sm font-semibold text-slate-900">Register Frequent Guest</div>
           <div className="mt-4 space-y-4">
             <Input
-              label="Guest Name"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              error={errors.name}
-              placeholder="e.g., Neha Verma"
+              label="Guest source"
+              value={guestOptions.length ? 'Existing guest records' : 'No eligible guests available'}
+              readOnly
             />
-            <Input
-              label="Contact"
-              value={form.contact}
-              onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
-              error={errors.contact}
-              placeholder="e.g., 9876543210"
+            <Select
+              label="Guest"
+              value={form.guestId}
+              onChange={(e) => setForm((f) => ({ ...f, guestId: e.target.value }))}
+              options={
+                guestOptions.length
+                  ? [{ value: '', label: 'Select guest' }, ...guestOptions]
+                  : [{ value: '', label: 'No eligible guests to register' }]
+              }
+              error={errors.guestId}
+              disabled={!guestOptions.length}
             />
             <Select
               label="Tier"
