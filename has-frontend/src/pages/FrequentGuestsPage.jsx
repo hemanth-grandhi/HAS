@@ -26,6 +26,23 @@ function formatDate(value) {
   }
 }
 
+function normalizeName(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
+function normalizeContact(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
+function contactsMatch(left, right) {
+  if (!left || !right) return false
+  if (left === right) return true
+  return left.endsWith(right) || right.endsWith(left)
+}
+
 export default function FrequentGuestsPage() {
   const toast = useToast()
   const [loading, setLoading] = useState(true)
@@ -82,10 +99,12 @@ export default function FrequentGuestsPage() {
 
     try {
       const allGuests = await hotelApi.listGuests()
+      const formName = normalizeName(form.name)
+      const formContact = normalizeContact(form.contact)
       const guestMatch = allGuests.find(
         (g) =>
-          g.name?.toLowerCase() === form.name.trim().toLowerCase() &&
-          g.contactNumber === form.contact.trim(),
+          normalizeName(g.name) === formName &&
+          contactsMatch(normalizeContact(g.contactNumber), formContact),
       )
       if (!guestMatch) {
         throw new Error('Guest not found. Please create a reservation or check-in for this guest first.')
