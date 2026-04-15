@@ -7,11 +7,18 @@ import com.has.backend.exception.RoomNotAvailableException;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 
 @Service
 public class ReservationService {
+    private static final Set<String> ALLOWED_ROOM_TYPES = Set.of(
+            "SINGLE AC",
+            "SINGLE NON-AC",
+            "DOUBLE AC",
+            "DOUBLE NON-AC"
+    );
     private final ReservationRepository reservationRepo;
     private final RoomRepository roomRepo;
     private final GuestRepository guestRepo;
@@ -29,6 +36,11 @@ public class ReservationService {
     public String makeReservation(Guest guest, String roomType, LocalDateTime startDate, LocalDateTime endDate) {
         if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
             throw new InvalidRequestException("endDate must be after startDate");
+        }
+
+        String normalizedRoomType = roomType == null ? "" : roomType.trim().toUpperCase(Locale.ROOT);
+        if (!ALLOWED_ROOM_TYPES.contains(normalizedRoomType)) {
+            throw new InvalidRequestException("Unsupported roomType. Allowed values: Single AC, Single Non-AC, Double AC, Double Non-AC");
         }
 
         // Parse the single-string roomType (e.g. "Single AC" -> occupancyType="Single", acStatus="AC")

@@ -1,16 +1,26 @@
 package com.has.backend.service;
 
 import com.has.backend.entity.*;
+import com.has.backend.exception.InvalidRequestException;
 import com.has.backend.exception.ResourceNotFoundException;
 import com.has.backend.exception.RoomNotAvailableException;
 import com.has.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class CheckInService {
+    private static final Set<String> ALLOWED_ROOM_TYPES = Set.of(
+            "SINGLE AC",
+            "SINGLE NON-AC",
+            "DOUBLE AC",
+            "DOUBLE NON-AC"
+    );
+
     private final CheckInRepository checkInRepo;
     private final GuestRepository guestRepo;
     private final RoomRepository roomRepo;
@@ -32,6 +42,11 @@ public class CheckInService {
      * Walk-in check-in: creates a brand new check-in with a new token.
      */
     public CheckIn processCheckIn(Guest guestData, String roomType, Double advancePayment) {
+        String normalizedRoomType = roomType == null ? "" : roomType.trim().toUpperCase(Locale.ROOT);
+        if (!ALLOWED_ROOM_TYPES.contains(normalizedRoomType)) {
+            throw new InvalidRequestException("Unsupported roomType. Allowed values: Single AC, Single Non-AC, Double AC, Double Non-AC");
+        }
+
         Guest savedGuest = guestRepo.save(guestData);
 
         Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
