@@ -12,7 +12,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/catering")
-@PreAuthorize("hasAnyRole('CATERING_MANAGER', 'ADMINISTRATOR')")
 public class CateringController {
     private final CateringService service;
 
@@ -21,6 +20,7 @@ public class CateringController {
     }
 
     @PostMapping("/log")
+    @PreAuthorize("hasAnyRole('CATERING_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<CateringOrder> logConsumption(@Valid @RequestBody CateringOrderRequest request) {
         CateringOrder order = service.logConsumption(
                 request.getTokenNumber(),
@@ -32,11 +32,13 @@ public class CateringController {
     }
 
     @GetMapping("/{tokenNumber}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'CATERING_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<CateringOrder>> getOrdersByToken(@PathVariable String tokenNumber) {
         return ResponseEntity.ok(service.getOrdersByToken(tokenNumber));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'CATERING_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<CateringOrder>> getAllOrders() {
         return ResponseEntity.ok(service.getAllOrders());
     }
