@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import AutocompleteInput from '../components/ui/AutocompleteInput.jsx'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -16,7 +15,13 @@ import {
   isValidDateRange,
 } from '../utils/dateUtils.js'
 import { validateContactNumber, getCountryCodePrefix } from '../utils/contactUtils.js'
-import { getRoomTypes } from '../utils/availabilityUtils.js'
+
+const ROOM_TYPE_OPTIONS = [
+  { value: 'Single AC', label: 'Single AC' },
+  { value: 'Single Non-AC', label: 'Single Non-AC' },
+  { value: 'Double AC', label: 'Double AC' },
+  { value: 'Double Non-AC', label: 'Double Non-AC' },
+]
 
 function formatDate(value) {
   try {
@@ -64,10 +69,6 @@ export default function ReservationCheckInPage() {
 
   const [lookupForm, setLookupForm] = useState({ guestName: '', contact: '' })
 
-  const roomTypeOptions = useMemo(() => {
-    return getRoomTypes(rooms).map((type) => ({ value: type, label: type }))
-  }, [rooms])
-
   const reservationNights = useMemo(
     () => calculateDuration(reservationForm.checkInDate, reservationForm.checkOutDate),
     [reservationForm.checkInDate, reservationForm.checkOutDate],
@@ -82,7 +83,7 @@ export default function ReservationCheckInPage() {
       ])
       setRooms(roomsRes)
       void checkInsRes
-      const defaultRoomType = roomsRes[0]?.roomType || ''
+      const defaultRoomType = ROOM_TYPE_OPTIONS[0].value
       setReservationForm((f) => ({ ...f, roomType: defaultRoomType }))
       setWalkInForm((f) => ({ ...f, roomType: defaultRoomType }))
     } catch (e) {
@@ -324,20 +325,15 @@ export default function ReservationCheckInPage() {
           <div className="mt-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Room Type</label>
-              <AutocompleteInput
+              <Select
                 value={reservationForm.roomType}
                 onChange={(e) => {
                   const value = e.target.value
                   setReservationForm((f) => ({ ...f, roomType: value }))
                   setWalkInForm((f) => ({ ...f, roomType: value }))
                 }}
-                options={
-                  roomTypeOptions.length
-                    ? roomTypeOptions
-                    : [{ value: '', label: loading ? 'Loading room types...' : 'No room types available' }]
-                }
+                options={ROOM_TYPE_OPTIONS}
                 error={errors.roomType}
-                placeholder="Single Room, Double Room, Deluxe Room, Suite"
               />
             </div>
 

@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMINISTRATOR')")
 public class AdminController {
     private final AdminService service;
 
@@ -24,43 +23,51 @@ public class AdminController {
     }
 
     @PostMapping("/users")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         SystemUser createdUser = service.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toUserResponse(createdUser));
     }
 
     @PostMapping("/rooms")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<Room> configureRoom(@RequestBody Room room) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.configureRoom(room));
     }
 
     @PutMapping("/settings")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<SystemSettings> updateSettings(@RequestBody SystemSettings settings) {
         return ResponseEntity.ok(service.updateSettings(settings));
     }
 
     @GetMapping("/rooms")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(service.getAllRooms());
     }
 
     @GetMapping("/rooms/{roomId}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<Room> getRoomById(@PathVariable Long roomId) {
         return ResponseEntity.ok(service.getRoomById(roomId));
     }
 
     @PutMapping("/rooms/{roomId}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<Room> updateRoom(@PathVariable Long roomId, @RequestBody Room roomData) {
         return ResponseEntity.ok(service.updateRoom(roomId, roomData));
     }
 
     @DeleteMapping("/rooms/{roomId}")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
         service.deleteRoom(roomId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(service.getAllUsers().stream()
                 .map(this::toUserResponse)
@@ -68,6 +75,7 @@ public class AdminController {
     }
 
     @GetMapping("/settings")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public ResponseEntity<SystemSettings> getSettings() {
         return ResponseEntity.ok(service.getSettings());
     }

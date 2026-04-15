@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import AutocompleteInput from '../components/ui/AutocompleteInput.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
@@ -15,7 +14,6 @@ import {
   isValidDateRange,
 } from '../utils/dateUtils.js'
 import { validateContactNumber } from '../utils/contactUtils.js'
-import { getRoomTypes } from '../utils/availabilityUtils.js'
 
 const COUNTRY_OPTIONS = [
   { value: 'IN', label: 'IN +91' },
@@ -36,6 +34,13 @@ const ID_PROOF_OPTIONS = [
   { value: 'Passport', label: 'Passport' },
   { value: 'Driving License', label: 'Driving License' },
   { value: 'Voter ID', label: 'Voter ID' },
+]
+
+const ROOM_TYPE_OPTIONS = [
+  { value: 'Single AC', label: 'Single AC' },
+  { value: 'Single Non-AC', label: 'Single Non-AC' },
+  { value: 'Double AC', label: 'Double AC' },
+  { value: 'Double Non-AC', label: 'Double Non-AC' },
 ]
 
 function toDateTime(value, hour, minute) {
@@ -77,15 +82,12 @@ export default function BookingPage() {
     [form.checkInDate, form.checkOutDate],
   )
 
-  const roomTypes = useMemo(() => getRoomTypes(rooms), [rooms])
-  const roomTypeOptions = useMemo(
-    () => roomTypes.map((roomType) => ({ value: roomType, label: roomType })),
-    [roomTypes],
-  )
-
   const featuredRoomTypes = useMemo(() => {
     return Object.values(
       rooms.reduce((grouped, room) => {
+        if (!ROOM_TYPE_OPTIONS.some((option) => option.value === room.roomType)) {
+          return grouped
+        }
         const current = grouped[room.roomType] || {
           roomType: room.roomType,
           climateLabels: new Set(),
@@ -126,7 +128,7 @@ export default function BookingPage() {
       if (!form.roomType && roomsRes.length) {
         setForm((current) => ({
           ...current,
-          roomType: getRoomTypes(roomsRes)[0] || '',
+          roomType: ROOM_TYPE_OPTIONS[0].value,
         }))
       }
     } catch (error) {
@@ -491,14 +493,12 @@ export default function BookingPage() {
                 </div>
                 {errors.idProofFileName ? <div className="mt-1 text-xs font-medium text-rose-600">{errors.idProofFileName}</div> : null}
               </div>
-              <AutocompleteInput
+              <Select
                 label="Room Type"
                 value={form.roomType}
                 onChange={(event) => updateForm({ roomType: event.target.value, roomId: '' })}
-                options={roomTypeOptions}
+                options={ROOM_TYPE_OPTIONS}
                 error={errors.roomType}
-                placeholder="Single Room, Double Room, Deluxe Room, Suite"
-                hint="Choose from hotel room categories or type manually."
                 containerClassName="md:col-span-2"
               />
               <Input
