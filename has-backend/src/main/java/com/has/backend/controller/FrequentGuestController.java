@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/frequent-guests")
-@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
 public class FrequentGuestController {
     private final FrequentGuestService service;
 
@@ -18,16 +17,19 @@ public class FrequentGuestController {
     }
 
     @PostMapping("/register/{guestId}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<FrequentGuest> registerFrequentGuest(@PathVariable Long guestId) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.registerFrequentGuest(guestId));
     }
 
     @GetMapping("/{frequentGuestId}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<FrequentGuest> getFrequentGuest(@PathVariable int frequentGuestId) {
         return ResponseEntity.ok(service.getFrequentGuest(frequentGuestId));
     }
 
     @PutMapping("/{frequentGuestId}/rewards")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<FrequentGuest> updateRewards(
             @PathVariable int frequentGuestId,
             @RequestParam(required = false) Integer rewardPoints,

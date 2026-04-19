@@ -16,6 +16,7 @@ export default function BillingCheckoutPage() {
   const [token, setToken] = useState('')
   const [extraDiscountType, setExtraDiscountType] = useState('none') // none|amount|percent
   const [extraDiscountValue, setExtraDiscountValue] = useState(0)
+  const [applyFrequentGuestDiscount, setApplyFrequentGuestDiscount] = useState(false)
   const [preview, setPreview] = useState(null)
   const [previewLoading, setPreviewLoading] = useState(false)
 
@@ -49,6 +50,7 @@ export default function BillingCheckoutPage() {
         token,
         extraDiscountType,
         extraDiscountValue,
+        applyFrequentGuestDiscount,
       })
       setPreview(data)
     } catch (e) {
@@ -65,7 +67,7 @@ export default function BillingCheckoutPage() {
   async function doCheckout() {
     if (!token) return
     try {
-      await hotelApi.checkout({ token })
+      await hotelApi.checkout({ token, applyFrequentGuestDiscount })
       toast.pushToast({
         type: 'success',
         title: 'Checked out successfully',
@@ -97,6 +99,9 @@ export default function BillingCheckoutPage() {
       : extraDiscountType === 'amount'
         ? 'Amount (INR)'
         : 'Percent (%)'
+
+  const selectedReservation = activeReservations.find((r) => r.token === token)
+
 
   return (
     <div className="space-y-4">
@@ -141,6 +146,18 @@ export default function BillingCheckoutPage() {
               onChange={(e) => setExtraDiscountValue(e.target.value)}
               disabled={extraDiscountType === 'none'}
             />
+
+            {selectedReservation?.isFrequentGuest && (
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={applyFrequentGuestDiscount}
+                  onChange={(e) => setApplyFrequentGuestDiscount(e.target.checked)}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                />
+                Frequent guest discount
+              </label>
+            )}
 
             <Button
               onClick={generate}

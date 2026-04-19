@@ -22,6 +22,14 @@ import FrequentGuestsPage from './pages/FrequentGuestsPage.jsx'
 import OccupancyAnalysisPage from './pages/OccupancyAnalysisPage.jsx'
 import TariffRevisionPage from './pages/TariffRevisionPage.jsx'
 import { api } from './services/api.js'
+import { canAccessPath, getDefaultRoute, getNavItems } from './authz.js'
+
+function RouteGuard({ session, path, children }) {
+  if (!canAccessPath(session?.authorities, path)) {
+    return <Navigate to={getDefaultRoute(session?.authorities)} replace />
+  }
+  return children
+}
 
 function LoginPage({ onLoginSuccess }) {
   const toast = useToast()
@@ -82,20 +90,7 @@ function LoginPage({ onLoginSuccess }) {
 
 function StaffShell({ session, onLogout }) {
   const role = session?.authorities?.[0]?.replace('ROLE_', '').replaceAll('_', ' ') || 'SYSTEM USER'
-  const navItems = useMemo(
-    () => [
-      { to: '/dashboard', label: 'Dashboard' },
-      { to: '/rooms', label: 'Room Management' },
-      { to: '/booking', label: 'Reservations' },
-      { to: '/check-in', label: 'Check-In' },
-      { to: '/catering', label: 'Catering Services' },
-      { to: '/billing', label: 'Billing & Checkout' },
-      { to: '/guests', label: 'Guests' },
-      { to: '/tariff', label: 'Tariff Revision' },
-      { to: '/occupancy', label: 'Occupancy Analysis' },
-    ],
-    [],
-  )
+  const navItems = useMemo(() => getNavItems(session?.authorities), [session?.authorities])
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -193,17 +188,80 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<StaffShell session={session} onLogout={handleLogout} />}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="rooms" element={<RoomManagementPage />} />
-              <Route path="booking" element={<BookingPage />} />
-              <Route path="check-in" element={<ReservationCheckInPage />} />
-              <Route path="catering" element={<CateringPage />} />
-              <Route path="billing" element={<BillingCheckoutPage />} />
-              <Route path="guests" element={<FrequentGuestsPage />} />
-              <Route path="tariff" element={<TariffRevisionPage />} />
-              <Route path="occupancy" element={<OccupancyAnalysisPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route index element={<Navigate to={getDefaultRoute(session?.authorities)} replace />} />
+              <Route
+                path="dashboard"
+                element={
+                  <RouteGuard session={session} path="/dashboard">
+                    <DashboardPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="rooms"
+                element={
+                  <RouteGuard session={session} path="/rooms">
+                    <RoomManagementPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="booking"
+                element={
+                  <RouteGuard session={session} path="/booking">
+                    <BookingPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="check-in"
+                element={
+                  <RouteGuard session={session} path="/check-in">
+                    <ReservationCheckInPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="catering"
+                element={
+                  <RouteGuard session={session} path="/catering">
+                    <CateringPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="billing"
+                element={
+                  <RouteGuard session={session} path="/billing">
+                    <BillingCheckoutPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="guests"
+                element={
+                  <RouteGuard session={session} path="/guests">
+                    <FrequentGuestsPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="tariff"
+                element={
+                  <RouteGuard session={session} path="/tariff">
+                    <TariffRevisionPage />
+                  </RouteGuard>
+                }
+              />
+              <Route
+                path="occupancy"
+                element={
+                  <RouteGuard session={session} path="/occupancy">
+                    <OccupancyAnalysisPage />
+                  </RouteGuard>
+                }
+              />
+              <Route path="*" element={<Navigate to={getDefaultRoute(session?.authorities)} replace />} />
             </Route>
           </Routes>
         </BrowserRouter>

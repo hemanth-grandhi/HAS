@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/guests")
-@PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
 public class GuestController {
     private final GuestService service;
 
@@ -18,16 +17,19 @@ public class GuestController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<Guest>> getAllGuests() {
         return ResponseEntity.ok(service.getAllGuests());
     }
 
     @GetMapping("/{guestId}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<Guest> getGuestById(@PathVariable Long guestId) {
         return ResponseEntity.ok(service.getGuestById(guestId));
     }
 
     @PutMapping("/{guestId}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<Guest> updateGuest(@PathVariable Long guestId, @RequestBody Guest guestData) {
         return ResponseEntity.ok(service.updateGuest(guestId, guestData));
     }

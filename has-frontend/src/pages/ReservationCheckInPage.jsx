@@ -14,7 +14,7 @@ import {
   getMinCheckInDate,
   isValidDateRange,
 } from '../utils/dateUtils.js'
-import { validateContactNumber, getCountryCodePrefix } from '../utils/contactUtils.js'
+import { validateContactNumber, getCountryCodePrefix, contactForBackend } from '../utils/contactUtils.js'
 
 const ROOM_TYPE_OPTIONS = [
   { value: 'Single AC', label: 'Single AC' },
@@ -47,6 +47,16 @@ export default function ReservationCheckInPage() {
   const [searching, setSearching] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
+  const [allReservations, setAllReservations] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyFilters, setHistoryFilters] = useState({
+    name: '',
+    contactNumber: '',
+    startDate: '',
+    endDate: '',
+    minDays: '',
+    maxDays: '',
+  })
 
   const [reservationForm, setReservationForm] = useState({
     guestName: '',
@@ -99,8 +109,21 @@ export default function ReservationCheckInPage() {
 
   useEffect(() => {
     load()
+    loadAllReservations()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function loadAllReservations() {
+    setHistoryLoading(true)
+    try {
+      const response = await hotelApi.listReservations()
+      setAllReservations(response)
+    } catch {
+      // silent – history panel is secondary
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
 
   function validateBookingForm(form) {
     const next = {}
@@ -172,7 +195,7 @@ export default function ReservationCheckInPage() {
     try {
       const response = await hotelApi.createReservation({
         name: reservationForm.guestName,
-        contactNumber: reservationForm.contact,
+        contactNumber: contactForBackend(reservationForm.contact),
         arrivalDate: reservationForm.checkInDate,
         expectedCheckOutDate: reservationForm.checkOutDate,
         roomType: reservationForm.roomType,
@@ -215,7 +238,7 @@ export default function ReservationCheckInPage() {
     try {
       const response = await hotelApi.createWalkInCheckIn({
         name: walkInForm.guestName,
-        contactNumber: walkInForm.contact,
+        contactNumber: contactForBackend(walkInForm.contact),
         arrivalDate: walkInForm.checkInDate,
         expectedCheckOutDate: walkInForm.checkOutDate,
         roomType: walkInForm.roomType,
@@ -261,7 +284,7 @@ export default function ReservationCheckInPage() {
     try {
       const results = await hotelApi.lookupReservations({
         name: lookupForm.guestName,
-        contactNumber: lookupForm.contact,
+        contactNumber: contactForBackend(lookupForm.contact),
       })
       setSearchResults(results)
       if (!results.length) {
@@ -308,7 +331,64 @@ export default function ReservationCheckInPage() {
     }
   }
 
+  async function cancelReservation(reservationId) {
+    setSubmitting(true)
+    try {
+      await hotelApi.cancelReservation(reservationId)
+      toast.pushToast({
+        type: 'success',
+        title: 'Reservation cancelled',
+        message: 'The reservation has been removed successfully.',
+      })
+      setSearchResults((current) => current.filter((item) => item.reservationId !== reservationId))
+      setAllReservations((current) => current.filter((item) => item.reservationId !== reservationId))
+    } catch (e) {
+      toast.pushToast({
+        type: 'error',
+        title: 'Cancellation failed',
+        message: e?.message || 'Unable to cancel the reservation',
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const filteredHistory = allReservations.filter((reservation) => {
+    const name = historyFilters.name.trim().toLowerCase()
+    const contact = historyFilters.contactNumber.trim().replace(/\D/g, '')
+    const guestName = (reservation.guest?.name || '').toLowerCase()
+    const guestContact = (reservation.guest?.contactNumber || '').replace(/\D/g, '')
+
+    if (name && !guestName.includes(name)) return false
+    if (contact && !guestContact.includes(contact)) return false
+
+    const startTs = reservation.startDate ? new Date(reservation.startDate).getTime() : null
+    const endTs = reservation.endDate ? new Date(reservation.endDate).getTime() : null
+
+    if (historyFilters.startDate) {
+      const filterStart = new Date(historyFilters.startDate).getTime()
+      if (!startTs || startTs < filterStart) return false
+    }
+    if (historyFilters.endDate) {
+      const filterEnd = new Date(historyFilters.endDate + 'T23:59:59').getTime()
+      if (!endTs || endTs > filterEnd) return false
+    }
+
+    if (historyFilters.minDays || historyFilters.maxDays) {
+      const days =
+        startTs && endTs
+          ? Math.max(1, Math.ceil((endTs - startTs) / (24 * 60 * 60 * 1000)))
+          : null
+      if (days === null) return false
+      if (historyFilters.minDays && days < Number(historyFilters.minDays)) return false
+      if (historyFilters.maxDays && days > Number(historyFilters.maxDays)) return false
+    }
+
+    return true
+  })
+
   return (
+
     <div className="space-y-6">
       <PageHeader
         title="Reservations & Check-ins"
@@ -361,7 +441,11 @@ export default function ReservationCheckInPage() {
                 type="date"
                 value={reservationForm.checkOutDate}
                 min={getMinCheckOutDate(reservationForm.checkInDate) || minCheckInDate}
-                onChange={(e) => setReservationForm((f) => ({ ...f, checkOutDate: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setReservationForm((f) => ({ ...f, checkOutDate: value }))
+                  setWalkInForm((f) => ({ ...f, checkOutDate: value }))
+                }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${
                   errors.checkOutDate ? 'border-rose-500' : 'border-slate-300 focus:border-indigo-500'
                 }`}
@@ -452,13 +536,7 @@ export default function ReservationCheckInPage() {
               </div>
             </div>
 
-            <Button
-              onClick={submitReservation}
-              disabled={submitting || !availableRooms || availableRooms.totalAvailable === 0}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-            >
-              {submitting ? 'Booking...' : 'Reserve Room'}
-            </Button>
+
 
             <Button
               onClick={submitWalkIn}
@@ -578,13 +656,25 @@ export default function ReservationCheckInPage() {
                     {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
                   </td>
                   <td className="px-4 py-3">
-                    <Button
-                      variant="primary"
-                      type="button"
-                      onClick={() => processReservationCheckIn(reservation.reservationId)}
-                    >
-                      Check-in Now
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        type="button"
+                        onClick={() => processReservationCheckIn(reservation.reservationId)}
+                        disabled={submitting}
+                      >
+                        Check-in Now
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        type="button"
+                        onClick={() => cancelReservation(reservation.reservationId)}
+                        disabled={submitting}
+                        className="text-rose-600 hover:text-rose-700 border-rose-200 hover:border-rose-300"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -595,6 +685,146 @@ export default function ReservationCheckInPage() {
             Search for a reservation to see matching bookings.
           </div>
         )}
+      </Card>
+
+      {/* Reservation History */}
+      <Card className="p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4">
+          <div>
+            <div className="text-lg font-semibold text-slate-900">Reservation History</div>
+            <div className="text-sm text-slate-500">Browse and filter all reservations by guest details, dates, and duration.</div>
+          </div>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => setHistoryFilters({ name: '', contactNumber: '', startDate: '', endDate: '', minDays: '', maxDays: '' })}
+          >
+            Clear Filters
+          </Button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 pb-4 border-b border-slate-100">
+          <Input
+            label="Guest Name"
+            placeholder="Search by name"
+            value={historyFilters.name}
+            onChange={(e) => setHistoryFilters((f) => ({ ...f, name: e.target.value }))}
+          />
+          <Input
+            label="Contact No."
+            placeholder="Search by contact"
+            value={historyFilters.contactNumber}
+            onChange={(e) => setHistoryFilters((f) => ({ ...f, contactNumber: e.target.value }))}
+          />
+          <div>
+            <label className="block text-sm font-medium text-slate-800 mb-1">Start Date (from)</label>
+            <input
+              type="date"
+              value={historyFilters.startDate}
+              onChange={(e) => setHistoryFilters((f) => ({ ...f, startDate: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-800 mb-1">End Date (upto)</label>
+            <input
+              type="date"
+              value={historyFilters.endDate}
+              onChange={(e) => setHistoryFilters((f) => ({ ...f, endDate: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+          </div>
+          <Input
+            label="Min Days"
+            type="number"
+            min={1}
+            placeholder="e.g. 2"
+            value={historyFilters.minDays}
+            onChange={(e) => setHistoryFilters((f) => ({ ...f, minDays: e.target.value }))}
+          />
+          <Input
+            label="Max Days"
+            type="number"
+            min={1}
+            placeholder="e.g. 7"
+            value={historyFilters.maxDays}
+            onChange={(e) => setHistoryFilters((f) => ({ ...f, maxDays: e.target.value }))}
+          />
+        </div>
+
+        <div className="mt-4">
+          {historyLoading ? (
+            <div className="text-sm text-slate-400 py-4 text-center">Loading reservations...</div>
+          ) : filteredHistory.length ? (
+            <Table>
+              <thead>
+                <tr className="bg-slate-50 text-xs font-semibold text-slate-700">
+                  <th className="px-4 py-3">Reservation ID</th>
+                  <th className="px-4 py-3">Guest Name</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Room Type</th>
+                  <th className="px-4 py-3">Start Date</th>
+                  <th className="px-4 py-3">End Date</th>
+                  <th className="px-4 py-3">Days</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredHistory.map((reservation) => {
+                  const startTs = reservation.startDate ? new Date(reservation.startDate).getTime() : null
+                  const endTs = reservation.endDate ? new Date(reservation.endDate).getTime() : null
+                  const days = startTs && endTs ? Math.max(1, Math.ceil((endTs - startTs) / (24 * 60 * 60 * 1000))) : '--'
+                  return (
+                    <tr key={reservation.reservationId} className="border-t border-slate-100">
+                      <td className="px-4 py-3 text-slate-700 font-medium">#{reservation.reservationId}</td>
+                      <td className="px-4 py-3 text-slate-700">{reservation.guest?.name || '--'}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{reservation.guest?.contactNumber || '--'}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                          {reservation.roomType || '--'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 text-sm">{formatDate(reservation.startDate)}</td>
+                      <td className="px-4 py-3 text-slate-700 text-sm">{formatDate(reservation.endDate)}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                          {days} {days === 1 ? 'day' : 'days'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            type="button"
+                            onClick={() => processReservationCheckIn(reservation.reservationId)}
+                            disabled={submitting}
+                          >
+                            Check-in
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            type="button"
+                            onClick={() => cancelReservation(reservation.reservationId)}
+                            disabled={submitting}
+                            className="text-rose-600 hover:text-rose-700 border-rose-200 hover:border-rose-300"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </Table>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500 text-center">
+              {allReservations.length === 0
+                ? 'No reservations found in the system.'
+                : 'No reservations match the current filters.'}
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   )

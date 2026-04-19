@@ -35,8 +35,9 @@ export const isValidDateRange = (checkInDate, checkOutDate) => {
   const checkOut = new Date(checkOutDate + 'T00:00:00')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
-  return checkIn >= today && checkOut > checkIn
+  // Compare using local midnight, not UTC, to avoid timezone offset issues
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return checkIn >= todayLocal && checkOut > checkIn
 }
 
 export const getMinCheckOutDate = (checkInDate) => {
@@ -48,7 +49,10 @@ export const getMinCheckOutDate = (checkInDate) => {
 
 export const getMinCheckInDate = () => {
   const today = new Date()
-  return today.toISOString().split('T')[0]
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 export const dateIsInRange = (date, startDate, endDate) => {
