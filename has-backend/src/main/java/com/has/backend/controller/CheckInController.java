@@ -8,6 +8,7 @@ import com.has.backend.service.CheckInService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -22,6 +23,7 @@ public class CheckInController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<CheckIn> processCheckIn(@Valid @RequestBody CheckInRequest request) {
         Guest guest = new Guest();
         guest.setName(request.getName());
@@ -37,6 +39,7 @@ public class CheckInController {
     }
 
     @PostMapping("/from-reservation")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
     public ResponseEntity<CheckIn> processCheckInFromReservation(
             @Valid @RequestBody CheckInFromReservationRequest request) {
         CheckIn checkIn = service.processCheckIn(request.getReservationId(), request.getAdvancePayment());
@@ -44,11 +47,13 @@ public class CheckInController {
     }
 
     @GetMapping("/{tokenNumber}")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'CATERING_MANAGER', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<CheckIn> getCheckIn(@PathVariable String tokenNumber) {
         return ResponseEntity.ok(service.getCheckInByToken(tokenNumber));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'CATERING_MANAGER', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<CheckIn>> getAllCheckIns() {
         return ResponseEntity.ok(service.getAllCheckIns());
     }

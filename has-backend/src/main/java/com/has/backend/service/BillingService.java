@@ -38,13 +38,18 @@ public class BillingService {
         return processCheckout(tokenNumber, false);
     }
 
-    public Bill processCheckout(String tokenNumber, boolean registerFrequentGuest) {
+    public Bill processCheckout(String tokenNumber, boolean applyFrequentGuestDiscount) {
         CheckIn checkIn = checkInRepo.findByTokenNumber(tokenNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Check-in not found for token: " + tokenNumber));
         checkIn.setActualCheckOutDate(LocalDateTime.now());
         checkInRepo.save(checkIn);
 
         Room room = checkIn.getRoom();
+
+        // Free up the room immediately on checkout
+        room.setAvailabilityStatus("AVAILABLE");
+        roomRepo.save(room);
+
         long days = Duration.between(checkIn.getCheckInDate(), checkIn.getActualCheckOutDate()).toDays();
         if (days == 0) days = 1;
 
@@ -59,9 +64,10 @@ public class BillingService {
         // --- Frequent Guest Discount Logic ---
         double discount = 0.0;
         Guest guest = checkIn.getGuest();
+
         Optional<FrequentGuest> frequentGuestOpt = frequentGuestRepo.findByGuest_GuestId(guest.getGuestId());
 
-        if (frequentGuestOpt.isPresent()) {
+        if (applyFrequentGuestDiscount && frequentGuestOpt.isPresent()) {
             FrequentGuest frequentGuest = frequentGuestOpt.get();
             String tier = frequentGuest.getDiscountTier();
 
@@ -99,9 +105,6 @@ public class BillingService {
 
         Bill savedBill = billRepo.save(bill);
 
-        if (registerFrequentGuest) {
-            registerFrequentGuest(checkIn.getGuest());
-        }
 
         return savedBill;
     }

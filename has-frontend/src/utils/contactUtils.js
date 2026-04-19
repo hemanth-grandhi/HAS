@@ -64,3 +64,16 @@ export const formatContactDisplay = (contact) => {
   if (contact.startsWith('+')) return contact
   return '+91' + contact.replace(/\D/g, '')
 }
+
+/**
+ * Normalizes phone input for backend APIs (10–15 chars, digits with optional leading +).
+ */
+export function contactForBackend(contact) {
+  const raw = String(contact ?? '').trim().replace(/[\s-]/g, '')
+  if (!raw) return ''
+  if (raw.startsWith('+')) {
+    const digits = raw.slice(1).replace(/\D/g, '')
+    return ('+' + digits).slice(0, 15)
+  }
+  return raw.replace(/\D/g, '').slice(0, 15)
+}

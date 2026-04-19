@@ -13,7 +13,7 @@ import {
   getMinCheckOutDate,
   isValidDateRange,
 } from '../utils/dateUtils.js'
-import { validateContactNumber } from '../utils/contactUtils.js'
+import { validateContactNumber, contactForBackend } from '../utils/contactUtils.js'
 
 const COUNTRY_OPTIONS = [
   { value: 'IN', label: 'IN +91' },
@@ -111,7 +111,7 @@ export default function BookingPage() {
     [availableRooms, form.roomId],
   )
 
-  const bookingMode = form.checkInDate === todayIso ? 'checkin' : 'reservation'
+  const bookingMode = 'reservation'
 
   async function load() {
     setLoading(true)
@@ -295,7 +295,7 @@ export default function BookingPage() {
         name: `${form.firstName} ${form.lastName}`.trim(),
         gender: form.gender,
         countryCode: form.countryCode,
-        contactNumber: form.contact,
+        contactNumber: contactForBackend(form.contact),
         idProofType: form.idProofType,
         idProofFileName: form.idProofFileName,
         roomType: form.roomType,
@@ -305,10 +305,7 @@ export default function BookingPage() {
         advancePayment: Number(form.advancePayment || 0),
       }
 
-      const response =
-        bookingMode === 'checkin'
-          ? await hotelApi.createWalkInCheckIn(payload)
-          : await hotelApi.createReservation({
+      const response = await hotelApi.createReservation({
               ...payload,
               startDate: toDateTime(form.checkInDate, 14, 0),
               endDate: toDateTime(form.checkOutDate, 11, 0),
@@ -316,7 +313,7 @@ export default function BookingPage() {
 
       setBookingStatus('confirmed')
       setBookingSuccess({
-        kind: bookingMode,
+        kind: 'reservation',
         guestName: `${form.firstName} ${form.lastName}`.trim(),
         roomNumber: selectedRoom?.number || response.room?.number || '--',
         token: response.tokenNumber,
@@ -423,7 +420,7 @@ export default function BookingPage() {
                 </div>
               </div>
               <div className="rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
-                {bookingMode === 'checkin' ? 'Same-day arrival: room becomes occupied now' : 'Future stay: reservation only'}
+                Future reservation — room will be held until check-in
               </div>
             </div>
 

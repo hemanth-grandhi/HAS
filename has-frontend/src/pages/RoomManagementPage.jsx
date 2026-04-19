@@ -9,7 +9,7 @@ import Table from '../components/ui/Table.jsx'
 import { useToast } from '../components/ui/useToast.js'
 import { hotelApi } from '../services/hotelApi.js'
 import { getMinCheckInDate, getMinCheckOutDate, isValidDateRange } from '../utils/dateUtils.js'
-import { validateContactNumber } from '../utils/contactUtils.js'
+import { validateContactNumber, contactForBackend } from '../utils/contactUtils.js'
 
 const COUNTRY_OPTIONS = [
   { value: 'IN', label: 'IN +91' },
@@ -165,7 +165,7 @@ export default function RoomManagementPage() {
         firstName: form.firstName,
         lastName: form.lastName,
         name: `${form.firstName} ${form.lastName}`.trim(),
-        contactNumber: form.contact,
+        contactNumber: contactForBackend(form.contact),
         countryCode: form.countryCode,
         frequentGuestId: form.frequentGuestId ? Number(form.frequentGuestId) : undefined,
         roomId: selectedRoom.id,

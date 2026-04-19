@@ -20,8 +20,8 @@ public class BillingController {
     @PostMapping("/checkout/{tokenNumber}")
     public ResponseEntity<Bill> processCheckout(
             @PathVariable String tokenNumber,
-            @RequestParam(defaultValue = "false") boolean registerFrequentGuest) {
-        return ResponseEntity.ok(service.processCheckout(tokenNumber, registerFrequentGuest));
+            @RequestParam(defaultValue = "false") boolean applyFrequentGuestDiscount) {
+        return ResponseEntity.ok(service.processCheckout(tokenNumber, applyFrequentGuestDiscount));
     }
 
     @PatchMapping("/confirm-payment/{billId}")

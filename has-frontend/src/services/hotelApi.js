@@ -981,6 +981,11 @@ export const mockHotelApi = {
       .sort((left, right) => right.rewardPoints - left.rewardPoints)
   },
 
+  async listReservations() {
+    const state = readState()
+    return state.reservations.map((reservation) => normalizeReservation(state, reservation))
+  },
+
   async createReservation(payload) {
     return mutateState((state) => finalizeReservation(state, payload))
   },
@@ -1284,6 +1289,17 @@ export const mockHotelApi = {
     })
   },
 
+  async cancelReservation(reservationId) {
+    return mutateState((state) => {
+      const index = state.reservations.findIndex(
+        (r) => r.reservationId === Number(reservationId),
+      )
+      if (index < 0) throw new Error('Reservation not found.')
+      state.reservations.splice(index, 1)
+      return { success: true }
+    })
+  },
+
   async resetMockData() {
     const state = createSeedState()
     persistState(state)
@@ -1467,6 +1483,23 @@ export const hotelApi = {
     })
   },
 
+  async listReservations() {
+    return withBackend(async () => {
+      const response = maybeBackendFailure(await api.get('/reservations'))
+      return (response.data || []).map((item) => ({
+        ...item,
+        roomType: item?.roomType || parseRoomType(item?.room),
+        guest: item?.guest
+          ? {
+              ...item.guest,
+              name: item.guest.name || '',
+              contactNumber: item.guest.contactNumber || '',
+            }
+          : null,
+      }))
+    })
+  },
+
   async createReservation(payload) {
     return withBackend(async () => {
       const response = maybeBackendFailure(await api.post('/reservations', payload))
@@ -1635,16 +1668,21 @@ export const hotelApi = {
   async listActiveReservations() {
     return withBackend(async () => {
       const checkIns = await fetchCheckInsRaw()
+      const fgList = await this.listFrequentGuests()
       return checkIns
         .filter((item) => !item.actualCheckOutDate)
-        .map((item) => ({
-          token: item.tokenNumber,
-          roomNumber: roomNumberFromId(item?.room?.roomId),
-          guestName: item?.guest?.name || 'Guest',
-          roomType: parseRoomType(item?.room),
-          checkInDate: toIso(item.checkInDate),
-          expectedCheckOutDate: toIso(item.expectedCheckOutDate),
-        }))
+        .map((item) => {
+          const isFg = !!fgList.find((f) => String(f.guestId) === String(item?.guest?.guestId))
+          return {
+            token: item.tokenNumber,
+            roomNumber: roomNumberFromId(item?.room?.roomId),
+            guestName: item?.guest?.name || 'Guest',
+            roomType: parseRoomType(item?.room),
+            checkInDate: toIso(item.checkInDate),
+            expectedCheckOutDate: toIso(item.expectedCheckOutDate),
+            isFrequentGuest: isFg,
+          }
+        })
     })
   },
 
@@ -1682,7 +1720,7 @@ export const hotelApi = {
     })
   },
 
-  async getBillingPreview({ token, extraDiscountType = 'none', extraDiscountValue = 0 }) {
+  async getBillingPreview({ token, extraDiscountType = 'none', extraDiscountValue = 0, applyFrequentGuestDiscount = false }) {
     return withBackend(async () => {
       const [checkInResponse, cateringEntries] = await Promise.all([
         maybeBackendFailure(await api.get(`/checkins/${token}`)),
@@ -1706,31 +1744,53 @@ export const hotelApi = {
         extraDiscountAmount = (subtotal * Math.max(0, Number(extraDiscountValue || 0))) / 100
       }
       const advancePayment = Number(checkIn?.advancePayment || 0)
-      const totalPayable = Math.max(0, subtotal - extraDiscountAmount - advancePayment)
+      let baseDiscountAmount = 0
+      let frequentGuestTier = null
+
+      const frequentGuests = await this.listFrequentGuests()
+      const fg = frequentGuests.find((f) => f.guestId === guest.guestId)
+
+      if (fg) {
+        frequentGuestTier = fg.tier
+        if (applyFrequentGuestDiscount) {
+          baseDiscountAmount = (subtotal * (fg.discountPct || 5)) / 100
+        }
+      }
+
+      const totalPayable = Math.max(0, subtotal - baseDiscountAmount - extraDiscountAmount - advancePayment)
       return {
         token,
         createdAtISO: new Date().toISOString(),
         guestName: guest?.name || 'Guest',
         contact: normalizeDigits(guest?.contactNumber || ''),
-        frequentGuestTier: null,
+        frequentGuestTier,
         roomNumber: roomNumberFromId(room?.roomId),
         roomType: parseRoomType(room),
         bedType: room?.occupancyType || '',
         roomCharges,
         cateringCharges,
-        baseDiscountAmount: 0,
+        baseDiscountAmount,
         extraDiscountAmount,
-        totalDiscountAmount: extraDiscountAmount,
+        totalDiscountAmount: baseDiscountAmount + extraDiscountAmount,
         totalPayable,
         cateringEntries,
       }
     })
   },
 
-  async checkout({ token }) {
+  async checkout({ token, applyFrequentGuestDiscount = false }) {
     return withBackend(async () => {
-      const response = maybeBackendFailure(await api.post(`/billing/checkout/${token}`))
+      const response = maybeBackendFailure(await api.post(`/billing/checkout/${token}?applyFrequentGuestDiscount=${applyFrequentGuestDiscount}`))
       return response.data || {}
+    })
+  },
+
+  async cancelReservation(reservationId) {
+    return withBackend(async () => {
+      const response = maybeBackendFailure(
+        await api.delete(`/reservations/${reservationId}`),
+      )
+      return response.data || { success: true }
     })
   },
 

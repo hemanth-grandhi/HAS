@@ -37,19 +37,19 @@ public class ReservationController {
     }
 
     @GetMapping("/{reservationId}")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<Reservation> getReservation(@PathVariable Long reservationId) {
         return ResponseEntity.ok(service.getReservationById(reservationId));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<Reservation>> getAllReservations() {
         return ResponseEntity.ok(service.getAllReservations());
     }
 
     @GetMapping("/lookup")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<Reservation>> lookupReservations(
             @RequestParam String name,
             @RequestParam String contactNumber) {

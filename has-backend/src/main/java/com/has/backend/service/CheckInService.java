@@ -50,7 +50,7 @@ public class CheckInService {
         Guest savedGuest = guestRepo.save(guestData);
 
         Room room = roomRepo.findByAvailabilityStatus("AVAILABLE").stream()
-                .filter(r -> roomType.equalsIgnoreCase(r.getOccupancyType() + " " + r.getAcStatus()))
+                .filter(r -> normalizedRoomType.equals(roomTypeLabel(r)))
                 .findFirst()
                 .orElseThrow(() -> new RoomNotAvailableException("Sorry! No available rooms of type: " + roomType));
 
@@ -74,7 +74,7 @@ public class CheckInService {
      */
     public CheckIn processCheckIn(Long reservationId, Double advancePayment) {
         Reservation reservation = reservationRepo.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation not found for ID: " + reservationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for ID: " + reservationId));
 
         Room room = reservation.getRoom();
         room.setAvailabilityStatus("OCCUPIED");
@@ -101,6 +101,11 @@ public class CheckInService {
 
     public List<CheckIn> getAllCheckIns() {
         return checkInRepo.findAll();
+    }
+
+    private static String roomTypeLabel(Room r) {
+        String composite = (r.getOccupancyType() + " " + r.getAcStatus()).trim();
+        return composite.toUpperCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 
     private String generateTokenNumber() {

@@ -42,7 +42,7 @@ public class AdminController {
     }
 
     @GetMapping("/rooms")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'HOTEL_MANAGER', 'ADMINISTRATOR')")
     public ResponseEntity<List<Room>> getAllRooms() {
         return ResponseEntity.ok(service.getAllRooms());
     }
